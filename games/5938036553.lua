@@ -16,7 +16,7 @@ local function downloadFile(path, func)
 	if not isfile(path) then
 		local suc, res = pcall(function()
 			return game:HttpGet(
-				'https://raw.githubusercontent.com/MaxlaserTech/CatV6/'
+				'https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'
 					.. readfile('catrewrite/profiles/commit.txt')
 					.. '/'
 					.. select(1, path:gsub('catrewrite/', '')),

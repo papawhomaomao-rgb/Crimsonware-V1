@@ -324,7 +324,7 @@ local function downloadFile(path, func)
 	if not isfile(path) then
 		createDownloader(path)
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/MaxlaserTech/CatV6/'..readfile('catrewrite/profiles/commit.txt')..'/'..select(1, path:gsub('catrewrite/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('catrewrite/profiles/commit.txt')..'/'..select(1, path:gsub('catrewrite/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -3592,7 +3592,7 @@ function mainapi:CreateGUI()
 	discordbutton.MouseButton1Click:Connect(function()
 		task.spawn(function()
 			tooltip.Text = 'Copied!'
-			setclipboard('https://discord.gg/catvape')
+			setclipboard('https://discord.gg/crimsonware')
 		end)
 	end)
 	settingsbutton.MouseEnter:Connect(function()
@@ -5729,7 +5729,7 @@ function mainapi:Load(skipgui, profile)
 
 		if guipane then
 			guipane:CreateToggle({
-				Name = 'Hide catvape button',
+				Name = 'Hide crimsonware button',
 				Default = hide or false,
 				Function = function(call)
 					button.BackgroundTransparency = call and 1 or 0.35
@@ -5891,7 +5891,7 @@ local scarcitybanner = Instance.new('TextLabel')
 scarcitybanner.Size = UDim2.fromScale(1, 0.02)
 scarcitybanner.Position = UDim2.fromScale(0, 0.97)
 scarcitybanner.BackgroundTransparency = 1
-scarcitybanner.Text = 'Thank you for choosing catvape! join discord.gg/catvape or click the discord button to join.'
+scarcitybanner.Text = 'Thank you for choosing crimsonware! join discord.gg/crimsonware or click the discord button to join.'
 scarcitybanner.TextScaled = true
 scarcitybanner.TextColor3 = Color3.new(1, 1, 1)
 scarcitybanner.TextStrokeTransparency = 0.5
@@ -6157,7 +6157,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('catrewrite/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/MaxlaserTech/CatV6/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
 		end
 	end,
 	Tooltip = 'This will set your profile to the default settings of Vape'
@@ -6191,7 +6191,7 @@ general:CreateButton({
 		if shared.VapeDeveloper then
 			loadstring(readfile('catrewrite/loader.lua'), 'loader')()
 		else
-			loadstring(game:HttpGet('https://raw.githubusercontent.com/MaxlaserTech/CatV6/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
+			loadstring(game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
 		end
 	end,
 	Tooltip = 'Reloads vape for debugging purposes'
@@ -6308,7 +6308,7 @@ guipane:CreateDropdown({
 			if shared.VapeDeveloper then
 				loadstring(readfile('catrewrite/loader.lua'), 'loader')()
 			else
-				loadstring(game:HttpGet('https://raw.githubusercontent.com/MaxlaserTech/CatV6/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
+				loadstring(game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('catrewrite/profiles/commit.txt')..'/loader.lua', true))()
 			end
 		end
 	end,
