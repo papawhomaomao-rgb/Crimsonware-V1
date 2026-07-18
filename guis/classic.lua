@@ -7381,7 +7381,7 @@ local menuok, menuerr = pcall(function()
 	bigwindow.Name = 'CrimsonwareMenu'
 	bigwindow.AnchorPoint = Vector2.new(0.5, 0.5)
 	bigwindow.Position = UDim2.fromScale(0.5, 0.5)
-	bigwindow.Size = UDim2.fromOffset(600, 440)
+	bigwindow.Size = UDim2.fromOffset(440, 480)
 	bigwindow.BackgroundColor3 = color.Dark(uipallet.Main, 0.18)
 	bigwindow.BorderSizePixel = 0
 	bigwindow.ZIndex = 2
@@ -7535,10 +7535,10 @@ local menuok, menuerr = pcall(function()
 			end
 		end)
 	end
-	local function addTab(name, sourceFrame, iconImage, scrollPage)
+	local function addTab(name, sourceFrame, iconImage, mode)
 		order = order + 1
 		local page
-		if scrollPage then
+		if mode == 'scroll' then
 			page = Instance.new('ScrollingFrame')
 			page.ScrollBarThickness = 3
 			page.ScrollBarImageTransparency = 0.6
@@ -7557,8 +7557,30 @@ local menuok, menuerr = pcall(function()
 		pages[name] = page
 
 		sourceFrame.Parent = page
-		sourceFrame.Position = UDim2.fromOffset(0, 6)
-		sourceFrame.Size = UDim2.new(1, 0, 1, -6)
+		if mode == 'window' then
+			-- Lock the category window open at a fixed size inside the page:
+			-- defeats dragging, and stops the accordion collapse/resize (and
+			-- Load's expand toggles) from shrinking it and re-hiding modules.
+			-- Its inner Children scroll frame handles overflow internally.
+			local lockpos = UDim2.fromOffset(30, 4)
+			local lockheight = 430
+			local function lock()
+				if sourceFrame.Position ~= lockpos then
+					sourceFrame.Position = lockpos
+				end
+				local w = sourceFrame.Size.X.Offset
+				if w < 50 then w = 220 end
+				if sourceFrame.Size.X.Offset ~= w or sourceFrame.Size.Y.Offset ~= lockheight then
+					sourceFrame.Size = UDim2.fromOffset(w, lockheight)
+				end
+			end
+			sourceFrame:GetPropertyChangedSignal('Position'):Connect(lock)
+			sourceFrame:GetPropertyChangedSignal('Size'):Connect(lock)
+			lock()
+		else
+			sourceFrame.Position = UDim2.fromOffset(0, 6)
+			sourceFrame.Size = UDim2.new(1, 0, 1, -6)
+		end
 		keepVisible(sourceFrame)
 
 		local btn = Instance.new('TextButton')
@@ -7607,53 +7629,55 @@ local menuok, menuerr = pcall(function()
 		end)
 	end
 
-	-- module categories → clean list pages
+	-- Adopt each whole category window as a page. Reparenting the full window
+	-- (rather than just its module list) keeps vape's proven, working panel
+	-- assembly intact — the modules render exactly as they do natively.
 	local first
-	local moduleOrder = {'Combat', 'Blatant', 'Render', 'Utility', 'World', 'Inventory', 'Minigames', 'Kits'}
-	for _, cname in ipairs(moduleOrder) do
+	local function adopt(cname, expand)
 		local cat = mainapi.Categories[cname]
-		if cat and cat.Object then
-			pcall(function()
-				local childrenFrame = cat.Object:FindFirstChild('Children')
-				if childrenFrame then
-					local iconImg = cat.Object:FindFirstChild('Icon') and cat.Object.Icon.Image or ''
-					addTab(cname, childrenFrame, iconImg, false)
-					if not first then first = cname end
-					cat.Object.Parent = graveyard
-				end
-			end)
-		end
+		if not (cat and cat.Object) then return end
+		pcall(function()
+			local win = cat.Object
+			if expand and cat.Expand and not cat.Expanded then
+				pcall(function() cat:Expand() end)
+			end
+			local iconImg = win:FindFirstChild('Icon') and win.Icon.Image or ''
+			addTab(cname, win, iconImg, 'window')
+			local inner = win:FindFirstChild('Children') or win:FindFirstChild('CustomChildren')
+			if inner then keepVisible(inner) end
+			if not first then first = cname end
+		end)
 	end
 
-	-- list categories (Friends/Profiles/Targets) → whole-window pages
+	for _, cname in ipairs({'Combat', 'Blatant', 'Render', 'Utility', 'World', 'Inventory', 'Minigames', 'Kits'}) do
+		adopt(cname, true)
+	end
 	for _, cname in ipairs({'Targets', 'Friends', 'Profiles'}) do
-		local cat = mainapi.Categories[cname]
-		if cat and cat.Object then
-			pcall(function()
-				local iconImg = cat.Object:FindFirstChild('Icon') and cat.Object.Icon.Image or ''
-				addTab(cname, cat.Object, iconImg, false)
-				local inner = cat.Object:FindFirstChild('CustomChildren') or cat.Object:FindFirstChild('Children')
-				if inner then keepVisible(inner) end
-			end)
-		end
+		adopt(cname, false)
 	end
 
-	-- settings → scroll page, then hide the main hub
+	-- settings → scroll page (best effort)
+	pcall(function()
+		local mainObj = mainapi.Categories.Main and mainapi.Categories.Main.Object
+		if not mainObj then return end
+		local settingspane
+		for _, c in ipairs(mainObj:GetChildren()) do
+			if c:IsA('TextButton') and c:FindFirstChild('Version') and c:FindFirstChild('Children') then
+				settingspane = c
+			end
+		end
+		if settingspane then
+			local sc = settingspane:FindFirstChild('Children')
+			sc.Size = UDim2.new(1, 0, 0, 0)
+			sc.AutomaticSize = Enum.AutomaticSize.Y
+			addTab('Settings', sc, '', 'scroll')
+		end
+	end)
+
+	-- ALWAYS remove the original main hub, independent of everything above
 	pcall(function()
 		local mainObj = mainapi.Categories.Main and mainapi.Categories.Main.Object
 		if mainObj then
-			local settingspane
-			for _, c in ipairs(mainObj:GetChildren()) do
-				if c:IsA('TextButton') and c:FindFirstChild('Version') and c:FindFirstChild('Children') then
-					settingspane = c
-				end
-			end
-			if settingspane then
-				local sc = settingspane:FindFirstChild('Children')
-				sc.Size = UDim2.new(1, 0, 0, 0)
-				sc.AutomaticSize = Enum.AutomaticSize.Y
-				addTab('Settings', sc, '', true)
-			end
 			mainObj.Parent = graveyard
 		end
 	end)
