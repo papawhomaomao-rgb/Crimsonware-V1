@@ -2484,18 +2484,19 @@ task.spawn(function()
 	while mainapi.Loaded ~= nil do
 		if mainapi.Loaded and mainapi.Hellfire ~= false and mainapi.GUIColor and not mainapi.GUIColor.Rainbow then
 			local t = tick()
-			local pulse = math.sin(t * 2.1) * 0.5 + 0.5
-			local flicker = 0.8 + 0.2 * (math.sin(t * 15.7) * 0.5 + 0.5)
+			-- Gentle, slow breathe with only a faint flicker: peaceful, still hellish.
+			local pulse = math.sin(t * 1.4) * 0.5 + 0.5
+			local flicker = 0.96 + 0.04 * (math.sin(t * 7.5) * 0.5 + 0.5)
 			local mix = math.clamp(pulse * flicker, 0, 1)
-			local hue = 0.005 + 0.052 * mix
-			local sat = 0.99 - 0.17 * mix
-			local val = 0.5 + 0.45 * mix
+			local hue = 0.007 + 0.043 * mix
+			local sat = 0.85 - 0.11 * mix
+			local val = 0.48 + 0.33 * mix
 			mainapi.GUIColor.Hue = hue
 			mainapi.GUIColor.Sat = sat
 			mainapi.GUIColor.Value = val
 			pcall(mainapi.UpdateGUI, mainapi, hue, sat, val, true)
 		end
-		task.wait(1 / 15)
+		task.wait(1 / 20)
 	end
 end)
 
@@ -5948,7 +5949,7 @@ notifications.Parent = scaledgui
 tooltip = Instance.new('TextLabel')
 tooltip.Name = 'Tooltip'
 tooltip.Position = UDim2.fromScale(-1, -1)
-tooltip.ZIndex = 5
+tooltip.ZIndex = 90
 tooltip.BackgroundColor3 = color.Dark(uipallet.Main, 0.02)
 tooltip.Visible = false
 tooltip.Text = ''
@@ -5961,7 +5962,7 @@ addCorner(tooltip)
 local toolstrokebkg = Instance.new('Frame')
 toolstrokebkg.Size = UDim2.new(1, -2, 1, -2)
 toolstrokebkg.Position = UDim2.fromOffset(1, 1)
-toolstrokebkg.ZIndex = 6
+toolstrokebkg.ZIndex = 91
 toolstrokebkg.BackgroundTransparency = 1
 toolstrokebkg.Parent = tooltip
 local toolstroke = Instance.new('UIStroke')
@@ -7370,7 +7371,7 @@ local menuok, menuerr = pcall(function()
 	local backdrop = Instance.new('TextButton')
 	backdrop.Name = 'Backdrop'
 	backdrop.Size = UDim2.fromScale(1, 1)
-	backdrop.BackgroundColor3 = Color3.new()
+	backdrop.BackgroundColor3 = Color3.fromRGB(12, 5, 5)
 	backdrop.BackgroundTransparency = 0.4
 	backdrop.AutoButtonColor = false
 	backdrop.Text = ''
@@ -7381,17 +7382,45 @@ local menuok, menuerr = pcall(function()
 	bigwindow.Name = 'CrimsonwareMenu'
 	bigwindow.AnchorPoint = Vector2.new(0.5, 0.5)
 	bigwindow.Position = UDim2.fromScale(0.5, 0.5)
-	bigwindow.Size = UDim2.fromOffset(520, 520)
-	bigwindow.BackgroundColor3 = color.Dark(uipallet.Main, 0.18)
+	bigwindow.BackgroundColor3 = color.Dark(uipallet.Main, 0.22)
+	bigwindow.BackgroundTransparency = 0.08
 	bigwindow.BorderSizePixel = 0
 	bigwindow.ZIndex = 2
 	bigwindow.Parent = clickgui
-	addCorner(bigwindow, UDim.new(0, 10))
+	addCorner(bigwindow, UDim.new(0, 14))
+	-- Responsive: grows with the viewport but is always centred and on-screen.
+	local function fitWindow()
+		local abs = clickgui.AbsoluteSize
+		bigwindow.Size = UDim2.fromOffset(
+			math.clamp(abs.X * 0.5, 560, 740),
+			math.clamp(abs.Y * 0.82, 540, 780)
+		)
+	end
+	fitWindow()
+	mainapi:Clean(clickgui:GetPropertyChangedSignal('AbsoluteSize'):Connect(fitWindow))
+	-- Soft top-to-bottom sheen for depth instead of a flat block.
+	local wgradient = Instance.new('UIGradient')
+	wgradient.Rotation = 90
+	wgradient.Color = ColorSequence.new(color.Light(uipallet.Main, 0.04), color.Dark(uipallet.Main, 0.16))
+	wgradient.Parent = bigwindow
 	local wstroke = Instance.new('UIStroke')
-	wstroke.Color = Color3.fromRGB(130, 22, 22)
+	wstroke.Color = Color3.fromRGB(120, 42, 42)
 	wstroke.Thickness = 1.5
-	wstroke.Transparency = 0.2
+	wstroke.Transparency = 0.5
 	wstroke.Parent = bigwindow
+	-- Pop-in animation whenever the menu opens.
+	local winscale = Instance.new('UIScale')
+	winscale.Parent = bigwindow
+	local function playOpen()
+		winscale.Scale = 0.85
+		backdrop.BackgroundTransparency = 1
+		tweenService:Create(winscale, TweenInfo.new(0.32, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {Scale = 1}):Play()
+		tweenService:Create(backdrop, TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundTransparency = 0.4}):Play()
+	end
+	playOpen()
+	mainapi:Clean(clickgui:GetPropertyChangedSignal('Visible'):Connect(function()
+		if clickgui.Visible then playOpen() end
+	end))
 
 	local header = Instance.new('Frame')
 	header.Name = 'Header'
@@ -7484,31 +7513,8 @@ local menuok, menuerr = pcall(function()
 		pcall(function() mainapi:Uninject() end)
 	end)
 
-	-- Drag from the header using vape's own per-drag pattern: temporary
-	-- InputChanged/Changed connections that clean themselves up, instead of
-	-- persistent global input hooks that interfered with the GUI keybind.
-	header.InputBegan:Connect(function(inputObj)
-		if inputObj.UserInputType == Enum.UserInputType.MouseButton1 or inputObj.UserInputType == Enum.UserInputType.Touch then
-			local dragPosition = Vector2.new(
-				bigwindow.AbsolutePosition.X - inputObj.Position.X,
-				bigwindow.AbsolutePosition.Y - inputObj.Position.Y + guiService:GetGuiInset().Y
-			) / scale.Scale
-			local changed
-			changed = inputService.InputChanged:Connect(function(input)
-				if input.UserInputType == (inputObj.UserInputType == Enum.UserInputType.MouseButton1 and Enum.UserInputType.MouseMovement or Enum.UserInputType.Touch) then
-					local position = input.Position
-					bigwindow.Position = UDim2.fromOffset((position.X / scale.Scale) + dragPosition.X, (position.Y / scale.Scale) + dragPosition.Y)
-				end
-			end)
-			local ended
-			ended = inputObj.Changed:Connect(function()
-				if inputObj.UserInputState == Enum.UserInputState.End then
-					if changed then changed:Disconnect() end
-					if ended then ended:Disconnect() end
-				end
-			end)
-		end
-	end)
+	-- The window is intentionally fixed dead-centre and cannot be dragged.
+	-- (No drag input hooks also means nothing to interfere with the keybind.)
 
 	local sidebar = Instance.new('ScrollingFrame')
 	sidebar.Name = 'Sidebar'
@@ -7839,15 +7845,16 @@ local menuok, menuerr = pcall(function()
 		mainapi:BlurCheck()
 	end)
 
-	-- hellfire glow on the header accent + window border
+	-- Soft hellfire glow on the header accent + window border (matches the
+	-- gentler main pulse: slow breathe, faint flicker, muted ember).
 	task.spawn(function()
 		while mainapi.Loaded ~= nil do
 			local t = tick()
-			local mix = math.clamp((math.sin(t * 2.1) * 0.5 + 0.5) * (0.8 + 0.2 * (math.sin(t * 15.7) * 0.5 + 0.5)), 0, 1)
-			local col = Color3.fromHSV(0.005 + 0.052 * mix, 0.99 - 0.17 * mix, 0.55 + 0.45 * mix)
+			local mix = math.clamp((math.sin(t * 1.4) * 0.5 + 0.5) * (0.96 + 0.04 * (math.sin(t * 7.5) * 0.5 + 0.5)), 0, 1)
+			local col = Color3.fromHSV(0.007 + 0.043 * mix, 0.85 - 0.11 * mix, 0.5 + 0.32 * mix)
 			accent.BackgroundColor3 = col
 			wstroke.Color = col
-			task.wait(1 / 15)
+			task.wait(1 / 20)
 		end
 	end)
 end)
