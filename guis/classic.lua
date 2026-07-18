@@ -7381,7 +7381,7 @@ local menuok, menuerr = pcall(function()
 	bigwindow.Name = 'CrimsonwareMenu'
 	bigwindow.AnchorPoint = Vector2.new(0.5, 0.5)
 	bigwindow.Position = UDim2.fromScale(0.5, 0.5)
-	bigwindow.Size = UDim2.fromOffset(440, 480)
+	bigwindow.Size = UDim2.fromOffset(520, 520)
 	bigwindow.BackgroundColor3 = color.Dark(uipallet.Main, 0.18)
 	bigwindow.BorderSizePixel = 0
 	bigwindow.ZIndex = 2
@@ -7642,14 +7642,16 @@ local menuok, menuerr = pcall(function()
 		page.ZIndex = 3
 		page.Parent = content
 		local pad = Instance.new('UIPadding')
-		pad.PaddingTop = UDim.new(0, 8)
+		pad.PaddingTop = UDim.new(0, 10)
+		pad.PaddingLeft = UDim.new(0, 10)
+		pad.PaddingRight = UDim.new(0, 14)
 		pad.Parent = page
 		local list = Instance.new('UIListLayout')
 		list.SortOrder = Enum.SortOrder.LayoutOrder
 		if centered then
 			list.HorizontalAlignment = Enum.HorizontalAlignment.Center
 		end
-		list.Padding = UDim.new(0, 4)
+		list.Padding = UDim.new(0, 6)
 		list.Parent = page
 		list:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
 			page.CanvasSize = UDim2.fromOffset(0, list.AbsoluteContentSize.Y + 16)
@@ -7692,7 +7694,8 @@ local menuok, menuerr = pcall(function()
 				page.Parent = content
 				pages[cname] = page
 				win.Parent = page
-				local lockpos = UDim2.fromOffset(30, 4)
+				addCorner(win, UDim.new(0, 8))
+				local lockpos = UDim2.fromOffset(10, 4)
 				win.Position = lockpos
 				win:GetPropertyChangedSignal('Position'):Connect(function()
 					if win.Position ~= lockpos then win.Position = lockpos end
@@ -7755,6 +7758,43 @@ local menuok, menuerr = pcall(function()
 		selectTab((next(pages)))
 	end
 
+	-- Re-skin a module row so it reads as part of this menu rather than a
+	-- native vape row dropped into it: full-width, rounded, with a small
+	-- on/off accent tab. modulebutton's own BackgroundColor3/TextColor3 stay
+	-- untouched — vape's UpdateGUI/rainbow loop repaints those continuously,
+	-- so only properties it never touches (Size, extra child frames) are safe
+	-- to own permanently.
+	local ENABLED_ACCENT = Color3.fromRGB(230, 75, 40)
+	local DISABLED_ACCENT = Color3.fromRGB(75, 50, 50)
+	local function styleModule(mod)
+		local btn = mod.Object
+		if not btn then return end
+		btn.Size = UDim2.new(1, 0, 0, 42)
+		addCorner(btn, UDim.new(0, 8))
+
+		local accent = Instance.new('Frame')
+		accent.Name = 'CWAccent'
+		accent.AnchorPoint = Vector2.new(0, 0.5)
+		accent.Position = UDim2.new(0, 7, 0.5, 0)
+		accent.Size = UDim2.new(0, 3, 1, -14)
+		accent.BorderSizePixel = 0
+		accent.BackgroundColor3 = mod.Enabled and ENABLED_ACCENT or DISABLED_ACCENT
+		accent.Parent = btn
+		addCorner(accent, UDim.new(1, 0))
+
+		if mod.Children then
+			addCorner(mod.Children, UDim.new(0, 8))
+		end
+
+		local nativeToggle = mod.Toggle
+		if nativeToggle then
+			mod.Toggle = function(self, ...)
+				nativeToggle(self, ...)
+				accent.BackgroundColor3 = self.Enabled and ENABLED_ACCENT or DISABLED_ACCENT
+			end
+		end
+	end
+
 	-- After modules finish loading, move each real module row (and its option
 	-- panel) into its category page and lift it above the window background.
 	task.spawn(function()
@@ -7771,6 +7811,7 @@ local menuok, menuerr = pcall(function()
 						mod.Object.LayoutOrder = idx
 						mod.Object.Parent = page
 						mod.Object.Visible = true
+						styleModule(mod)
 						liftZ(mod.Object, 8)
 						if mod.Children then
 							mod.Children.LayoutOrder = idx + 1
