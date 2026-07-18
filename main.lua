@@ -105,7 +105,140 @@ end
 if not isfile('crimsonware/profiles/gui.txt') then
 	writefile('crimsonware/profiles/gui.txt', 'new')
 end
-local gui = 'new'--readfile('crimsonware/profiles/gui.txt')
+
+local guilist = {new = true, classic = true, old = true, rise = true}
+local gui
+do
+	local forced = (typeof(shared.VapeGUI) == 'string' and shared.VapeGUI)
+		or (getgenv and typeof(getgenv().VapeGUI) == 'string' and getgenv().VapeGUI)
+	if forced and guilist[forced] then
+		-- explicit override (shared.VapeGUI / getgenv().VapeGUI)
+		gui = forced
+	elseif shared.vapereload and isfile('crimsonware/profiles/gui.txt') and guilist[readfile('crimsonware/profiles/gui.txt')] then
+		-- teleport / in-GUI theme switch: keep the chosen interface, no prompt
+		gui = readfile('crimsonware/profiles/gui.txt')
+	else
+		-- fresh manual load: let the user pick their interface
+		local choice
+		local holder = Instance.new('ScreenGui')
+		holder.Name = 'CrimsonwarePicker'
+		holder.DisplayOrder = 999999999
+		holder.IgnoreGuiInset = true
+		holder.ResetOnSpawn = false
+		holder.Parent = (gethui and gethui()) or cloneref(game:GetService('CoreGui'))
+
+		local backdrop = Instance.new('TextButton')
+		backdrop.Size = UDim2.fromScale(1, 1)
+		backdrop.BackgroundColor3 = Color3.new()
+		backdrop.BackgroundTransparency = 0.35
+		backdrop.AutoButtonColor = false
+		backdrop.Modal = true
+		backdrop.Text = ''
+		backdrop.Parent = holder
+
+		local panel = Instance.new('Frame')
+		panel.AnchorPoint = Vector2.new(0.5, 0.5)
+		panel.Position = UDim2.fromScale(0.5, 0.5)
+		panel.Size = UDim2.fromOffset(480, 300)
+		panel.BackgroundColor3 = Color3.fromRGB(18, 12, 12)
+		panel.BorderSizePixel = 0
+		panel.Parent = backdrop
+		Instance.new('UICorner', panel).CornerRadius = UDim.new(0, 10)
+		local pstroke = Instance.new('UIStroke', panel)
+		pstroke.Color = Color3.fromRGB(120, 20, 20)
+		pstroke.Thickness = 1.5
+		pstroke.Transparency = 0.2
+
+		local title = Instance.new('TextLabel')
+		title.BackgroundTransparency = 1
+		title.Position = UDim2.fromOffset(0, 26)
+		title.Size = UDim2.new(1, 0, 0, 34)
+		title.Font = Enum.Font.GothamBold
+		title.Text = 'CRIMSONWARE'
+		title.TextSize = 30
+		title.TextColor3 = Color3.fromRGB(220, 60, 60)
+		title.Parent = panel
+
+		local subtitle = Instance.new('TextLabel')
+		subtitle.BackgroundTransparency = 1
+		subtitle.Position = UDim2.fromOffset(0, 64)
+		subtitle.Size = UDim2.new(1, 0, 0, 18)
+		subtitle.Font = Enum.Font.Gotham
+		subtitle.Text = 'SELECT YOUR INTERFACE'
+		subtitle.TextSize = 12
+		subtitle.TextColor3 = Color3.fromRGB(150, 130, 130)
+		subtitle.Parent = panel
+
+		local function makeCard(x, name, sub, accent, value)
+			local card = Instance.new('TextButton')
+			card.AnchorPoint = Vector2.new(0.5, 0)
+			card.Position = UDim2.new(x, 0, 0, 112)
+			card.Size = UDim2.fromOffset(200, 150)
+			card.BackgroundColor3 = Color3.fromRGB(28, 20, 20)
+			card.AutoButtonColor = false
+			card.Text = ''
+			card.Parent = panel
+			Instance.new('UICorner', card).CornerRadius = UDim.new(0, 8)
+			local cstroke = Instance.new('UIStroke', card)
+			cstroke.Color = accent
+			cstroke.Thickness = 1
+			cstroke.Transparency = 0.45
+
+			local dot = Instance.new('Frame')
+			dot.Position = UDim2.fromOffset(16, 16)
+			dot.Size = UDim2.fromOffset(38, 38)
+			dot.BackgroundColor3 = accent
+			dot.BorderSizePixel = 0
+			dot.Parent = card
+			Instance.new('UICorner', dot).CornerRadius = UDim.new(1, 0)
+
+			local cname = Instance.new('TextLabel')
+			cname.BackgroundTransparency = 1
+			cname.Position = UDim2.fromOffset(16, 64)
+			cname.Size = UDim2.new(1, -32, 0, 44)
+			cname.Font = Enum.Font.GothamBold
+			cname.Text = name
+			cname.TextSize = 17
+			cname.TextWrapped = true
+			cname.TextXAlignment = Enum.TextXAlignment.Left
+			cname.TextYAlignment = Enum.TextYAlignment.Top
+			cname.TextColor3 = Color3.fromRGB(235, 225, 225)
+			cname.Parent = card
+
+			local csub = Instance.new('TextLabel')
+			csub.BackgroundTransparency = 1
+			csub.Position = UDim2.fromOffset(16, 118)
+			csub.Size = UDim2.new(1, -32, 0, 16)
+			csub.Font = Enum.Font.Gotham
+			csub.Text = sub
+			csub.TextSize = 12
+			csub.TextXAlignment = Enum.TextXAlignment.Left
+			csub.TextColor3 = Color3.fromRGB(150, 135, 135)
+			csub.Parent = card
+
+			card.MouseEnter:Connect(function()
+				card.BackgroundColor3 = Color3.fromRGB(42, 29, 29)
+				cstroke.Transparency = 0
+			end)
+			card.MouseLeave:Connect(function()
+				card.BackgroundColor3 = Color3.fromRGB(28, 20, 20)
+				cstroke.Transparency = 0.45
+			end)
+			card.MouseButton1Click:Connect(function()
+				choice = value
+			end)
+		end
+
+		makeCard(0.28, 'VAPE', 'Clean interface', Color3.fromRGB(0, 170, 130), 'new')
+		makeCard(0.72, 'CRIMSONWARE\nCLASSIC', 'Hellfire · Blood-red', Color3.fromRGB(180, 25, 25), 'classic')
+
+		repeat task.wait() until choice
+		holder:Destroy()
+		gui = choice
+		pcall(writefile, 'crimsonware/profiles/gui.txt', gui)
+	end
+	if not guilist[gui] then gui = 'new' end
+end
 
 if not isfolder('crimsonware/assets/'..gui) then
 	makefolder('crimsonware/assets/'..gui)

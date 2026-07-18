@@ -2,10 +2,11 @@ local license = ... or {}
 local mainapi = {
 	Categories = {},
 	GUIColor = {
-		Hue = 0.46,
-		Sat = 0.96,
-		Value = 0.52
+		Hue = 0,
+		Sat = 0.95,
+		Value = 0.72
 	},
+	Hellfire = true,
 	HeldKeybinds = {},
 	Keybind = {'RightShift'},
 	Loaded = false,
@@ -53,8 +54,8 @@ local tween = {
 	tweenstwo = {}
 }
 local uipallet = {
-	Main = Color3.fromRGB(26, 25, 26),
-	Text = Color3.fromRGB(200, 200, 200),
+	Main = Color3.fromRGB(20, 11, 11),
+	Text = Color3.fromRGB(226, 194, 194),
 	Font = Font.fromEnum(Enum.Font.Arial),
 	FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.SemiBold),
 	Tween = TweenInfo.new(0.16, Enum.EasingStyle.Linear)
@@ -450,17 +451,13 @@ do
 	end
 
 	function mainapi:Color(h)
-		local s = 0.75 + (0.15 * math.min(h / 0.03, 1))
-		if h > 0.57 then
-			s = 0.9 - (0.4 * math.min((h - 0.57) / 0.09, 1))
-		end
-		if h > 0.66 then
-			s = 0.5 + (0.4 * math.min((h - 0.66) / 0.16, 1))
-		end
-		if h > 0.87 then
-			s = 0.9 - (0.15 * math.min((h - 0.87) / 0.13, 1))
-		end
-		return h, s, 1
+		-- Hellfire ramp: fold the full 0-1 sweep into a red->ember-orange
+		-- flicker so every animated accent burns instead of rainbowing.
+		local t = math.abs(((h * 2) % 2) - 1)
+		local hue = 0.005 + (0.052 * t)
+		local sat = 0.99 - (0.19 * t)
+		local val = 0.55 + (0.45 * t)
+		return hue, sat, val
 	end
 
 	function mainapi:TextColor(h, s, v)
@@ -2480,6 +2477,28 @@ task.spawn(function()
 	until mainapi.Loaded == nil
 end)
 
+-- Hellfire: breathe the GUI accent between blood-red and ember-orange.
+-- Yields to the native Rainbow toggle so the colour picker still works.
+task.spawn(function()
+	repeat task.wait(0.1) until mainapi.Loaded or mainapi.Loaded == nil
+	while mainapi.Loaded ~= nil do
+		if mainapi.Loaded and mainapi.Hellfire ~= false and mainapi.GUIColor and not mainapi.GUIColor.Rainbow then
+			local t = tick()
+			local pulse = math.sin(t * 2.1) * 0.5 + 0.5
+			local flicker = 0.8 + 0.2 * (math.sin(t * 15.7) * 0.5 + 0.5)
+			local mix = math.clamp(pulse * flicker, 0, 1)
+			local hue = 0.005 + 0.052 * mix
+			local sat = 0.99 - 0.17 * mix
+			local val = 0.5 + 0.45 * mix
+			mainapi.GUIColor.Hue = hue
+			mainapi.GUIColor.Sat = sat
+			mainapi.GUIColor.Value = val
+			pcall(mainapi.UpdateGUI, mainapi, hue, sat, val, true)
+		end
+		task.wait(1 / 15)
+	end
+end)
+
 function mainapi:BlurCheck()
 	if self.ThreadFix and not inputService.TouchEnabled then
 		setthreadidentity(8)
@@ -2588,7 +2607,7 @@ function mainapi:CreateGUI()
 	settingsversion.Size = UDim2.new(1, 0, 0, 16)
 	settingsversion.Position = UDim2.new(0, 0, 1, -16)
 	settingsversion.BackgroundTransparency = 1
-	settingsversion.Text = 'Vape '..mainapi.Version..' '..(
+	settingsversion.Text = 'Crimsonware Classic '..(
 		isfile('crimsonware/profiles/commit.txt') and readfile('crimsonware/profiles/commit.txt'):sub(1, 6) or ''
 	)..' '
 	settingsversion.TextColor3 = color.Dark(uipallet.Text, 0.43)
@@ -3122,9 +3141,9 @@ function mainapi:CreateGUI()
 		local optionapi = {
 			Type = 'GUISlider',
 			Notch = 4,
-			Hue = 0.46,
-			Sat = 0.96,
-			Value = 0.52,
+			Hue = 0,
+			Sat = 0.95,
+			Value = 0.72,
 			Rainbow = false,
 			CustomColor = false
 		}
