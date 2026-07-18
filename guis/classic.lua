@@ -7359,7 +7359,7 @@ end))
 	Lives inside clickgui so all open/close/keybind/blur logic is reused.
 	Wrapped in pcall: if anything fails it falls back to the themed layout.
 ]]
-pcall(function()
+local menuok, menuerr = pcall(function()
 	local graveyard = Instance.new('Frame')
 	graveyard.Name = 'LegacyPanels'
 	graveyard.Size = UDim2.fromScale(1, 1)
@@ -7589,7 +7589,7 @@ pcall(function()
 		lbl.BackgroundTransparency = 1
 		lbl.Position = UDim2.fromOffset(hasIcon and 38 or 14, 0)
 		lbl.Size = UDim2.new(1, hasIcon and -44 or -20, 1, 0)
-		lbl.Font = uipallet.Font
+		lbl.FontFace = uipallet.Font
 		lbl.Text = name
 		lbl.TextSize = 14
 		lbl.TextXAlignment = Enum.TextXAlignment.Left
@@ -7681,5 +7681,8 @@ pcall(function()
 		end
 	end)
 end)
+if not menuok then
+	warn('[Crimsonware Classic] menu build failed: '..tostring(menuerr))
+end
 
 return mainapi
