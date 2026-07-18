@@ -2514,12 +2514,15 @@ function mainapi:CreateGUI()
 	logo.Image = getcustomasset('crimsonware/assets/new/guivape.png')
 	logo.ImageColor3 = select(3, uipallet.Main:ToHSV()) > 0.5 and uipallet.Text or Color3.new(1, 1, 1)
 	logo.Parent = window
-	local logov4 = Instance.new('ImageLabel')
+	local logov4 = Instance.new('TextLabel')
 	logov4.Name = 'V4Logo'
 	logov4.Size = UDim2.fromOffset(28, 16)
 	logov4.Position = UDim2.new(1, 1, 0, 1)
 	logov4.BackgroundTransparency = 1
-	logov4.Image = getcustomasset('crimsonware/assets/new/guiv4.png')
+	logov4.Text = 'V1'
+	logov4.TextScaled = true
+	logov4.FontFace = uipallet.FontSemiBold
+	logov4.TextColor3 = Color3.new(1, 1, 1)
 	logov4.Parent = logo
 	local children = Instance.new('Frame')
 	children.Name = 'Children'
@@ -7152,7 +7155,7 @@ function mainapi:UpdateGUI(hue, sat, val, default)
 
 	for i, v in mainapi.Categories do
 		if i == 'Main' then
-			v.Object.VapeLogo.V4Logo.ImageColor3 = Color3.fromHSV(hue, sat, val)
+			v.Object.VapeLogo.V4Logo.TextColor3 = Color3.fromHSV(hue, sat, val)
 			for _, button in v.Buttons do
 				if button.Enabled then
 					button.Object.TextColor3 = rainbow and Color3.fromHSV(mainapi:Color((hue - (button.Index * 0.025)) % 1)) or Color3.fromHSV(hue, sat, val)
