@@ -7484,25 +7484,31 @@ local menuok, menuerr = pcall(function()
 		pcall(function() mainapi:Uninject() end)
 	end)
 
-	local dragging, dragStart, startPos
-	header.InputBegan:Connect(function(io)
-		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = io.Position
-			startPos = bigwindow.Position
+	-- Drag from the header using vape's own per-drag pattern: temporary
+	-- InputChanged/Changed connections that clean themselves up, instead of
+	-- persistent global input hooks that interfered with the GUI keybind.
+	header.InputBegan:Connect(function(inputObj)
+		if inputObj.UserInputType == Enum.UserInputType.MouseButton1 or inputObj.UserInputType == Enum.UserInputType.Touch then
+			local dragPosition = Vector2.new(
+				bigwindow.AbsolutePosition.X - inputObj.Position.X,
+				bigwindow.AbsolutePosition.Y - inputObj.Position.Y + guiService:GetGuiInset().Y
+			) / scale.Scale
+			local changed
+			changed = inputService.InputChanged:Connect(function(input)
+				if input.UserInputType == (inputObj.UserInputType == Enum.UserInputType.MouseButton1 and Enum.UserInputType.MouseMovement or Enum.UserInputType.Touch) then
+					local position = input.Position
+					bigwindow.Position = UDim2.fromOffset((position.X / scale.Scale) + dragPosition.X, (position.Y / scale.Scale) + dragPosition.Y)
+				end
+			end)
+			local ended
+			ended = inputObj.Changed:Connect(function()
+				if inputObj.UserInputState == Enum.UserInputState.End then
+					if changed then changed:Disconnect() end
+					if ended then ended:Disconnect() end
+				end
+			end)
 		end
 	end)
-	header.InputChanged:Connect(function(io)
-		if dragging and (io.UserInputType == Enum.UserInputType.MouseMovement or io.UserInputType == Enum.UserInputType.Touch) then
-			local delta = io.Position - dragStart
-			bigwindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-		end
-	end)
-	mainapi:Clean(inputService.InputEnded:Connect(function(io)
-		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then
-			dragging = false
-		end
-	end))
 
 	local sidebar = Instance.new('ScrollingFrame')
 	sidebar.Name = 'Sidebar'
