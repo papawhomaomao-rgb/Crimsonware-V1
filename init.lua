@@ -29,7 +29,7 @@ local function downloadFile(path, func)
 			downloader.Text = 'Downloading '.. path
 		end
 		local suc, res = pcall(function()
-			return game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('catrewrite/profiles/commit.txt')..'/'..select(1, path:gsub('catrewrite/', '')), true)
+			return game:HttpGet('https://raw.githubusercontent.com/papawhomaomao-rgb/Crimsonware-V1/'..readfile('crimsonware/profiles/commit.txt')..'/'..select(1, path:gsub('crimsonware/', '')), true)
 		end)
 		if not suc or res == '404: Not Found' then
 			error(res)
@@ -57,7 +57,7 @@ local function wipeFolder(path)
 end
 
 
-for _, folder in {'catrewrite', 'catrewrite/games', 'catrewrite/profiles', 'catrewrite/assets', 'catrewrite/libraries', 'catrewrite/guis'} do
+for _, folder in {'crimsonware', 'crimsonware/games', 'crimsonware/profiles', 'crimsonware/assets', 'crimsonware/libraries', 'crimsonware/guis'} do
 	if not isfolder(folder) then
 		downloader.Text = 'Downloading '.. folder
 		makefolder(folder)
@@ -74,17 +74,17 @@ if not shared.VapeDeveloper then
 		commit = commit and subbed:sub(commit + 13, commit + 52) or nil
 		commit = commit and #commit == 40 and commit or 'main'
 	end
-	if commit == 'main' or (isfile('catrewrite/profiles/commit.txt') and readfile('catrewrite/profiles/commit.txt') or '') ~= commit then
-		if commit ~= 'main' and isfile('catrewrite/profiles/commit.txt') then
-			shared.updated = readfile('catrewrite/profiles/commit.txt')
+	if commit == 'main' or (isfile('crimsonware/profiles/commit.txt') and readfile('crimsonware/profiles/commit.txt') or '') ~= commit then
+		if commit ~= 'main' and isfile('crimsonware/profiles/commit.txt') then
+			shared.updated = readfile('crimsonware/profiles/commit.txt')
 		end
-		wipeFolder('catrewrite')
-		wipeFolder('catrewrite/games')
-		wipeFolder('catrewrite/guis')
-		wipeFolder('catrewrite/libraries')
+		wipeFolder('crimsonware')
+		wipeFolder('crimsonware/games')
+		wipeFolder('crimsonware/guis')
+		wipeFolder('crimsonware/libraries')
 	end
-	writefile('catrewrite/profiles/commit.txt', commit)
-	if #listfiles('catrewrite/profiles') < 4 then
+	writefile('crimsonware/profiles/commit.txt', commit)
+	if #listfiles('crimsonware/profiles') < 4 then
 		local req = request({
 			Url = 'https://api.github.com/repos/papawhomaomao-rgb/crimsonware-v1/contents/profiles',
 			Method = 'GET'
@@ -94,7 +94,7 @@ if not shared.VapeDeveloper then
 			if body and typeof(body) == 'table' then
 				for _, v in body do
 					if v.type == 'file' then
-						pcall(downloadFile, 'catrewrite/'.. ({v.path:gsub(' ', '%%20')})[1])
+						pcall(downloadFile, 'crimsonware/'.. ({v.path:gsub(' ', '%%20')})[1])
 					end
 				end
 			end
@@ -103,4 +103,4 @@ if not shared.VapeDeveloper then
 end
 
 downloader.Text = ''
-return loadstring(downloadFile('catrewrite/main.lua'), 'main')(license)
+return loadstring(downloadFile('crimsonware/main.lua'), 'main')(license)
