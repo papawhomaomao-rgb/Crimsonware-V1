@@ -7352,4 +7352,334 @@ mainapi:Clean(inputService.InputEnded:Connect(function(inputObj)
 	end
 end))
 
+--[[
+	Crimsonware Classic — single big-window interface.
+	Reparents the existing category content into one centred menu with a
+	sidebar + content pane, and hides the original floating vape panels.
+	Lives inside clickgui so all open/close/keybind/blur logic is reused.
+	Wrapped in pcall: if anything fails it falls back to the themed layout.
+]]
+pcall(function()
+	local graveyard = Instance.new('Frame')
+	graveyard.Name = 'LegacyPanels'
+	graveyard.Size = UDim2.fromScale(1, 1)
+	graveyard.BackgroundTransparency = 1
+	graveyard.Visible = false
+	graveyard.Parent = gui
+
+	local backdrop = Instance.new('TextButton')
+	backdrop.Name = 'Backdrop'
+	backdrop.Size = UDim2.fromScale(1, 1)
+	backdrop.BackgroundColor3 = Color3.new()
+	backdrop.BackgroundTransparency = 0.4
+	backdrop.AutoButtonColor = false
+	backdrop.Text = ''
+	backdrop.ZIndex = 1
+	backdrop.Parent = clickgui
+
+	local bigwindow = Instance.new('Frame')
+	bigwindow.Name = 'CrimsonwareMenu'
+	bigwindow.AnchorPoint = Vector2.new(0.5, 0.5)
+	bigwindow.Position = UDim2.fromScale(0.5, 0.5)
+	bigwindow.Size = UDim2.fromOffset(600, 440)
+	bigwindow.BackgroundColor3 = color.Dark(uipallet.Main, 0.18)
+	bigwindow.BorderSizePixel = 0
+	bigwindow.ZIndex = 2
+	bigwindow.Parent = clickgui
+	addCorner(bigwindow, UDim.new(0, 10))
+	local wstroke = Instance.new('UIStroke')
+	wstroke.Color = Color3.fromRGB(130, 22, 22)
+	wstroke.Thickness = 1.5
+	wstroke.Transparency = 0.2
+	wstroke.Parent = bigwindow
+
+	local header = Instance.new('Frame')
+	header.Name = 'Header'
+	header.Size = UDim2.new(1, 0, 0, 46)
+	header.BackgroundColor3 = color.Dark(uipallet.Main, 0.4)
+	header.BorderSizePixel = 0
+	header.ZIndex = 2
+	header.Parent = bigwindow
+	addCorner(header, UDim.new(0, 10))
+	local headermask = Instance.new('Frame')
+	headermask.Size = UDim2.new(1, 0, 0, 12)
+	headermask.Position = UDim2.new(0, 0, 1, -12)
+	headermask.BackgroundColor3 = header.BackgroundColor3
+	headermask.BorderSizePixel = 0
+	headermask.ZIndex = 2
+	headermask.Parent = header
+
+	local htitle = Instance.new('TextLabel')
+	htitle.BackgroundTransparency = 1
+	htitle.Position = UDim2.fromOffset(18, 0)
+	htitle.Size = UDim2.new(1, -140, 1, 0)
+	htitle.Font = Enum.Font.GothamBold
+	htitle.Text = 'CRIMSONWARE'
+	htitle.TextSize = 20
+	htitle.TextColor3 = Color3.fromRGB(220, 60, 60)
+	htitle.TextXAlignment = Enum.TextXAlignment.Left
+	htitle.ZIndex = 3
+	htitle.Parent = header
+	local htag = Instance.new('TextLabel')
+	htag.BackgroundTransparency = 1
+	htag.Position = UDim2.fromOffset(18, 26)
+	htag.Size = UDim2.new(1, -140, 0, 12)
+	htag.Font = Enum.Font.Gotham
+	htag.Text = 'CLASSIC'
+	htag.TextSize = 10
+	htag.TextXAlignment = Enum.TextXAlignment.Left
+	htag.TextColor3 = Color3.fromRGB(150, 110, 110)
+	htag.ZIndex = 3
+	htag.Parent = header
+
+	local accent = Instance.new('Frame')
+	accent.Name = 'Accent'
+	accent.Size = UDim2.new(1, 0, 0, 2)
+	accent.Position = UDim2.new(0, 0, 1, -2)
+	accent.BackgroundColor3 = Color3.fromRGB(180, 25, 25)
+	accent.BorderSizePixel = 0
+	accent.ZIndex = 3
+	accent.Parent = header
+
+	local close = Instance.new('TextButton')
+	close.Size = UDim2.fromOffset(30, 30)
+	close.Position = UDim2.new(1, -40, 0, 8)
+	close.BackgroundTransparency = 1
+	close.Font = Enum.Font.GothamBold
+	close.Text = 'X'
+	close.TextSize = 16
+	close.TextColor3 = Color3.fromRGB(200, 120, 120)
+	close.AutoButtonColor = false
+	close.ZIndex = 3
+	close.Parent = header
+	close.MouseButton1Click:Connect(function()
+		clickgui.Visible = false
+		mainapi:BlurCheck()
+	end)
+	close.MouseEnter:Connect(function() close.TextColor3 = Color3.fromRGB(240, 90, 90) end)
+	close.MouseLeave:Connect(function() close.TextColor3 = Color3.fromRGB(200, 120, 120) end)
+
+	local dragging, dragStart, startPos
+	header.InputBegan:Connect(function(io)
+		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = io.Position
+			startPos = bigwindow.Position
+		end
+	end)
+	header.InputChanged:Connect(function(io)
+		if dragging and (io.UserInputType == Enum.UserInputType.MouseMovement or io.UserInputType == Enum.UserInputType.Touch) then
+			local delta = io.Position - dragStart
+			bigwindow.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+	mainapi:Clean(inputService.InputEnded:Connect(function(io)
+		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then
+			dragging = false
+		end
+	end))
+
+	local sidebar = Instance.new('ScrollingFrame')
+	sidebar.Name = 'Sidebar'
+	sidebar.Position = UDim2.fromOffset(0, 46)
+	sidebar.Size = UDim2.new(0, 158, 1, -46)
+	sidebar.BackgroundColor3 = color.Dark(uipallet.Main, 0.32)
+	sidebar.BorderSizePixel = 0
+	sidebar.ScrollBarThickness = 2
+	sidebar.ScrollBarImageTransparency = 0.7
+	sidebar.CanvasSize = UDim2.new()
+	sidebar.ZIndex = 2
+	sidebar.Parent = bigwindow
+	local sidepad = Instance.new('UIPadding')
+	sidepad.PaddingTop = UDim.new(0, 8)
+	sidepad.Parent = sidebar
+	local sidelist = Instance.new('UIListLayout')
+	sidelist.SortOrder = Enum.SortOrder.LayoutOrder
+	sidelist.Padding = UDim.new(0, 3)
+	sidelist.Parent = sidebar
+	sidelist:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+		sidebar.CanvasSize = UDim2.fromOffset(0, sidelist.AbsoluteContentSize.Y + 16)
+	end)
+
+	local content = Instance.new('Frame')
+	content.Name = 'Content'
+	content.Position = UDim2.fromOffset(158, 46)
+	content.Size = UDim2.new(1, -158, 1, -46)
+	content.BackgroundTransparency = 1
+	content.ClipsDescendants = true
+	content.ZIndex = 2
+	content.Parent = bigwindow
+
+	local pages = {}
+	local tabs = {}
+	local function selectTab(name)
+		for n, page in pairs(pages) do
+			page.Visible = (n == name)
+		end
+		for n, btn in pairs(tabs) do
+			local active = (n == name)
+			btn.BackgroundTransparency = active and 0.25 or 1
+			local lbl = btn:FindFirstChild('Label')
+			if lbl then
+				lbl.TextColor3 = active and Color3.fromRGB(240, 228, 228) or Color3.fromRGB(150, 128, 128)
+			end
+		end
+	end
+
+	local order = 0
+	local function keepVisible(frame)
+		frame.Visible = true
+		frame:GetPropertyChangedSignal('Visible'):Connect(function()
+			if not frame.Visible then
+				frame.Visible = true
+			end
+		end)
+	end
+	local function addTab(name, sourceFrame, iconImage, scrollPage)
+		order = order + 1
+		local page
+		if scrollPage then
+			page = Instance.new('ScrollingFrame')
+			page.ScrollBarThickness = 3
+			page.ScrollBarImageTransparency = 0.6
+			page.CanvasSize = UDim2.new()
+			page.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+		else
+			page = Instance.new('Frame')
+		end
+		page.Name = name..'Page'
+		page.Size = UDim2.fromScale(1, 1)
+		page.BackgroundTransparency = 1
+		page.BorderSizePixel = 0
+		page.Visible = false
+		page.ZIndex = 2
+		page.Parent = content
+		pages[name] = page
+
+		sourceFrame.Parent = page
+		sourceFrame.Position = UDim2.fromOffset(0, 6)
+		sourceFrame.Size = UDim2.new(1, 0, 1, -6)
+		keepVisible(sourceFrame)
+
+		local btn = Instance.new('TextButton')
+		btn.Name = name..'Tab'
+		btn.Size = UDim2.new(1, -16, 0, 34)
+		btn.Position = UDim2.fromOffset(8, 0)
+		btn.LayoutOrder = order
+		btn.BackgroundColor3 = Color3.fromRGB(130, 24, 24)
+		btn.BackgroundTransparency = 1
+		btn.AutoButtonColor = false
+		btn.Text = ''
+		btn.ZIndex = 2
+		btn.Parent = sidebar
+		addCorner(btn, UDim.new(0, 6))
+		local hasIcon = iconImage and iconImage ~= ''
+		if hasIcon then
+			local ic = Instance.new('ImageLabel')
+			ic.Size = UDim2.fromOffset(16, 16)
+			ic.Position = UDim2.fromOffset(12, 9)
+			ic.BackgroundTransparency = 1
+			ic.Image = iconImage
+			ic.ImageColor3 = Color3.fromRGB(215, 120, 120)
+			ic.ZIndex = 3
+			ic.Parent = btn
+		end
+		local lbl = Instance.new('TextLabel')
+		lbl.Name = 'Label'
+		lbl.BackgroundTransparency = 1
+		lbl.Position = UDim2.fromOffset(hasIcon and 38 or 14, 0)
+		lbl.Size = UDim2.new(1, hasIcon and -44 or -20, 1, 0)
+		lbl.Font = uipallet.Font
+		lbl.Text = name
+		lbl.TextSize = 14
+		lbl.TextXAlignment = Enum.TextXAlignment.Left
+		lbl.TextColor3 = Color3.fromRGB(150, 128, 128)
+		lbl.ZIndex = 3
+		lbl.Parent = btn
+		tabs[name] = btn
+
+		btn.MouseButton1Click:Connect(function() selectTab(name) end)
+		btn.MouseEnter:Connect(function()
+			if not pages[name].Visible then btn.BackgroundTransparency = 0.7 end
+		end)
+		btn.MouseLeave:Connect(function()
+			if not pages[name].Visible then btn.BackgroundTransparency = 1 end
+		end)
+	end
+
+	-- module categories → clean list pages
+	local first
+	local moduleOrder = {'Combat', 'Blatant', 'Render', 'Utility', 'World', 'Inventory', 'Minigames', 'Kits'}
+	for _, cname in ipairs(moduleOrder) do
+		local cat = mainapi.Categories[cname]
+		if cat and cat.Object then
+			pcall(function()
+				local childrenFrame = cat.Object:FindFirstChild('Children')
+				if childrenFrame then
+					local iconImg = cat.Object:FindFirstChild('Icon') and cat.Object.Icon.Image or ''
+					addTab(cname, childrenFrame, iconImg, false)
+					if not first then first = cname end
+					cat.Object.Parent = graveyard
+				end
+			end)
+		end
+	end
+
+	-- list categories (Friends/Profiles/Targets) → whole-window pages
+	for _, cname in ipairs({'Targets', 'Friends', 'Profiles'}) do
+		local cat = mainapi.Categories[cname]
+		if cat and cat.Object then
+			pcall(function()
+				local iconImg = cat.Object:FindFirstChild('Icon') and cat.Object.Icon.Image or ''
+				addTab(cname, cat.Object, iconImg, false)
+				local inner = cat.Object:FindFirstChild('CustomChildren') or cat.Object:FindFirstChild('Children')
+				if inner then keepVisible(inner) end
+			end)
+		end
+	end
+
+	-- settings → scroll page, then hide the main hub
+	pcall(function()
+		local mainObj = mainapi.Categories.Main and mainapi.Categories.Main.Object
+		if mainObj then
+			local settingspane
+			for _, c in ipairs(mainObj:GetChildren()) do
+				if c:IsA('TextButton') and c:FindFirstChild('Version') and c:FindFirstChild('Children') then
+					settingspane = c
+				end
+			end
+			if settingspane then
+				local sc = settingspane:FindFirstChild('Children')
+				sc.Size = UDim2.new(1, 0, 0, 0)
+				sc.AutomaticSize = Enum.AutomaticSize.Y
+				addTab('Settings', sc, '', true)
+			end
+			mainObj.Parent = graveyard
+		end
+	end)
+
+	if first and pages[first] then
+		selectTab(first)
+	elseif next(pages) then
+		selectTab((next(pages)))
+	end
+
+	backdrop.MouseButton1Click:Connect(function()
+		clickgui.Visible = false
+		mainapi:BlurCheck()
+	end)
+
+	-- hellfire glow on the header accent + window border
+	task.spawn(function()
+		while mainapi.Loaded ~= nil do
+			local t = tick()
+			local mix = math.clamp((math.sin(t * 2.1) * 0.5 + 0.5) * (0.8 + 0.2 * (math.sin(t * 15.7) * 0.5 + 0.5)), 0, 1)
+			local col = Color3.fromHSV(0.005 + 0.052 * mix, 0.99 - 0.17 * mix, 0.55 + 0.45 * mix)
+			accent.BackgroundColor3 = col
+			wstroke.Color = col
+			task.wait(1 / 15)
+		end
+	end)
+end)
+
 return mainapi
