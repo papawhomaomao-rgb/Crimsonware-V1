@@ -7535,54 +7535,22 @@ local menuok, menuerr = pcall(function()
 			end
 		end)
 	end
-	local function addTab(name, sourceFrame, iconImage, mode)
-		order = order + 1
-		local page
-		if mode == 'scroll' then
-			page = Instance.new('ScrollingFrame')
-			page.ScrollBarThickness = 3
-			page.ScrollBarImageTransparency = 0.6
-			page.CanvasSize = UDim2.new()
-			page.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
-		else
-			page = Instance.new('Frame')
+	-- The ScreenGui uses Global ZIndexBehavior, so reparented vape frames (low
+	-- ZIndex) would render *behind* this opaque window. Lift them above it.
+	local function liftZ(root, offset)
+		if root:IsA('GuiObject') then
+			root.ZIndex = root.ZIndex + offset
 		end
-		page.Name = name..'Page'
-		page.Size = UDim2.fromScale(1, 1)
-		page.BackgroundTransparency = 1
-		page.BorderSizePixel = 0
-		page.Visible = false
-		page.ZIndex = 2
-		page.Parent = content
-		pages[name] = page
-
-		sourceFrame.Parent = page
-		if mode == 'window' then
-			-- Lock the category window open at a fixed size inside the page:
-			-- defeats dragging, and stops the accordion collapse/resize (and
-			-- Load's expand toggles) from shrinking it and re-hiding modules.
-			-- Its inner Children scroll frame handles overflow internally.
-			local lockpos = UDim2.fromOffset(30, 4)
-			local lockheight = 430
-			local function lock()
-				if sourceFrame.Position ~= lockpos then
-					sourceFrame.Position = lockpos
-				end
-				local w = sourceFrame.Size.X.Offset
-				if w < 50 then w = 220 end
-				if sourceFrame.Size.X.Offset ~= w or sourceFrame.Size.Y.Offset ~= lockheight then
-					sourceFrame.Size = UDim2.fromOffset(w, lockheight)
-				end
+		for _, d in ipairs(root:GetDescendants()) do
+			if d:IsA('GuiObject') then
+				d.ZIndex = d.ZIndex + offset
 			end
-			sourceFrame:GetPropertyChangedSignal('Position'):Connect(lock)
-			sourceFrame:GetPropertyChangedSignal('Size'):Connect(lock)
-			lock()
-		else
-			sourceFrame.Position = UDim2.fromOffset(0, 6)
-			sourceFrame.Size = UDim2.new(1, 0, 1, -6)
 		end
-		keepVisible(sourceFrame)
+	end
 
+	-- sidebar tab button for a page called `name`
+	local function makeTab(name, iconImage)
+		order = order + 1
 		local btn = Instance.new('TextButton')
 		btn.Name = name..'Tab'
 		btn.Size = UDim2.new(1, -16, 0, 34)
@@ -7592,7 +7560,7 @@ local menuok, menuerr = pcall(function()
 		btn.BackgroundTransparency = 1
 		btn.AutoButtonColor = false
 		btn.Text = ''
-		btn.ZIndex = 2
+		btn.ZIndex = 4
 		btn.Parent = sidebar
 		addCorner(btn, UDim.new(0, 6))
 		local hasIcon = iconImage and iconImage ~= ''
@@ -7603,7 +7571,7 @@ local menuok, menuerr = pcall(function()
 			ic.BackgroundTransparency = 1
 			ic.Image = iconImage
 			ic.ImageColor3 = Color3.fromRGB(215, 120, 120)
-			ic.ZIndex = 3
+			ic.ZIndex = 5
 			ic.Parent = btn
 		end
 		local lbl = Instance.new('TextLabel')
@@ -7616,47 +7584,99 @@ local menuok, menuerr = pcall(function()
 		lbl.TextSize = 14
 		lbl.TextXAlignment = Enum.TextXAlignment.Left
 		lbl.TextColor3 = Color3.fromRGB(150, 128, 128)
-		lbl.ZIndex = 3
+		lbl.ZIndex = 5
 		lbl.Parent = btn
 		tabs[name] = btn
 
 		btn.MouseButton1Click:Connect(function() selectTab(name) end)
 		btn.MouseEnter:Connect(function()
-			if not pages[name].Visible then btn.BackgroundTransparency = 0.7 end
+			if pages[name] and not pages[name].Visible then btn.BackgroundTransparency = 0.7 end
 		end)
 		btn.MouseLeave:Connect(function()
-			if not pages[name].Visible then btn.BackgroundTransparency = 1 end
+			if pages[name] and not pages[name].Visible then btn.BackgroundTransparency = 1 end
 		end)
 	end
 
-	-- Adopt each whole category window as a page. Reparenting the full window
-	-- (rather than just its module list) keeps vape's proven, working panel
-	-- assembly intact — the modules render exactly as they do natively.
+	-- a clean scrolling page (module column) in the content area
+	local function newPage(name, centered)
+		local page = Instance.new('ScrollingFrame')
+		page.Name = name..'Page'
+		page.Size = UDim2.fromScale(1, 1)
+		page.BackgroundTransparency = 1
+		page.BorderSizePixel = 0
+		page.Visible = false
+		page.ScrollBarThickness = 3
+		page.ScrollBarImageTransparency = 0.6
+		page.CanvasSize = UDim2.new()
+		page.ZIndex = 3
+		page.Parent = content
+		local pad = Instance.new('UIPadding')
+		pad.PaddingTop = UDim.new(0, 8)
+		pad.Parent = page
+		local list = Instance.new('UIListLayout')
+		list.SortOrder = Enum.SortOrder.LayoutOrder
+		if centered then
+			list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		end
+		list.Padding = UDim.new(0, 4)
+		list.Parent = page
+		list:GetPropertyChangedSignal('AbsoluteContentSize'):Connect(function()
+			page.CanvasSize = UDim2.fromOffset(0, list.AbsoluteContentSize.Y + 16)
+		end)
+		pages[name] = page
+		return page
+	end
+
+	-- Module categories: clean pages, populated from the flat module list after
+	-- everything loads (module buttons carry their own toggle/keybind logic).
 	local first
-	local function adopt(cname, expand)
-		local cat = mainapi.Categories[cname]
-		if not (cat and cat.Object) then return end
-		pcall(function()
-			local win = cat.Object
-			if expand and cat.Expand and not cat.Expanded then
-				pcall(function() cat:Expand() end)
-			end
-			local iconImg = win:FindFirstChild('Icon') and win.Icon.Image or ''
-			addTab(cname, win, iconImg, 'window')
-			local inner = win:FindFirstChild('Children') or win:FindFirstChild('CustomChildren')
-			if inner then keepVisible(inner) end
-			if not first then first = cname end
-		end)
-	end
-
+	local catpages = {}
 	for _, cname in ipairs({'Combat', 'Blatant', 'Render', 'Utility', 'World', 'Inventory', 'Minigames', 'Kits'}) do
-		adopt(cname, true)
-	end
-	for _, cname in ipairs({'Targets', 'Friends', 'Profiles'}) do
-		adopt(cname, false)
+		local cat = mainapi.Categories[cname]
+		if cat and cat.Object then
+			pcall(function()
+				local iconImg = cat.Object:FindFirstChild('Icon') and cat.Object.Icon.Image or ''
+				catpages[cname] = newPage(cname, true)
+				makeTab(cname, iconImg)
+				if not first then first = cname end
+				cat.Object.Parent = graveyard
+			end)
+		end
 	end
 
-	-- settings → scroll page (best effort)
+	-- List categories (Friends/Profiles/Targets): reparent their whole window.
+	local listwindows = {}
+	for _, cname in ipairs({'Targets', 'Friends', 'Profiles'}) do
+		local cat = mainapi.Categories[cname]
+		if cat and cat.Object then
+			pcall(function()
+				local win = cat.Object
+				local iconImg = win:FindFirstChild('Icon') and win.Icon.Image or ''
+				local page = Instance.new('Frame')
+				page.Name = cname..'Page'
+				page.Size = UDim2.fromScale(1, 1)
+				page.BackgroundTransparency = 1
+				page.Visible = false
+				page.ZIndex = 3
+				page.Parent = content
+				pages[cname] = page
+				win.Parent = page
+				local lockpos = UDim2.fromOffset(30, 4)
+				win.Position = lockpos
+				win:GetPropertyChangedSignal('Position'):Connect(function()
+					if win.Position ~= lockpos then win.Position = lockpos end
+				end)
+				keepVisible(win)
+				local inner = win:FindFirstChild('CustomChildren') or win:FindFirstChild('Children')
+				if inner then keepVisible(inner) end
+				makeTab(cname, iconImg)
+				listwindows[cname] = win
+			end)
+		end
+	end
+
+	-- Settings → scroll page holding the reparented settings options.
+	local settingscontent
 	pcall(function()
 		local mainObj = mainapi.Categories.Main and mainapi.Categories.Main.Object
 		if not mainObj then return end
@@ -7668,9 +7688,25 @@ local menuok, menuerr = pcall(function()
 		end
 		if settingspane then
 			local sc = settingspane:FindFirstChild('Children')
-			sc.Size = UDim2.new(1, 0, 0, 0)
+			local page = Instance.new('ScrollingFrame')
+			page.Name = 'SettingsPage'
+			page.Size = UDim2.fromScale(1, 1)
+			page.BackgroundTransparency = 1
+			page.BorderSizePixel = 0
+			page.Visible = false
+			page.ScrollBarThickness = 3
+			page.CanvasSize = UDim2.new()
+			page.AutomaticCanvasSize = Enum.AutomaticCanvasSize.Y
+			page.ZIndex = 3
+			page.Parent = content
+			pages['Settings'] = page
+			sc.Position = UDim2.fromOffset(6, 6)
+			sc.Size = UDim2.new(1, -12, 0, 0)
 			sc.AutomaticSize = Enum.AutomaticSize.Y
-			addTab('Settings', sc, '', 'scroll')
+			sc.Parent = page
+			keepVisible(sc)
+			settingscontent = sc
+			makeTab('Settings', '')
 		end
 	end)
 
@@ -7687,6 +7723,44 @@ local menuok, menuerr = pcall(function()
 	elseif next(pages) then
 		selectTab((next(pages)))
 	end
+
+	-- After modules finish loading, move each real module row (and its option
+	-- panel) into its category page and lift it above the window background.
+	task.spawn(function()
+		repeat task.wait(0.1) until mainapi.Loaded or mainapi.Loaded == nil
+		if mainapi.Loaded == nil then return end
+		local placed = {}
+		local function pass()
+			for name, mod in pairs(mainapi.Modules) do
+				if not placed[name] and mod.Object and catpages[mod.Category] then
+					placed[name] = true
+					pcall(function()
+						local page = catpages[mod.Category]
+						local idx = (mod.Index or 0) * 2
+						mod.Object.LayoutOrder = idx
+						mod.Object.Parent = page
+						mod.Object.Visible = true
+						liftZ(mod.Object, 8)
+						if mod.Children then
+							mod.Children.LayoutOrder = idx + 1
+							mod.Children.Parent = page
+							liftZ(mod.Children, 8)
+						end
+					end)
+				end
+			end
+		end
+		pass()
+		task.wait(1)
+		pass()
+		-- lift list + settings content that populated during load
+		for _, win in pairs(listwindows) do
+			pcall(function() liftZ(win, 8) end)
+		end
+		if settingscontent then
+			pcall(function() liftZ(settingscontent, 8) end)
+		end
+	end)
 
 	backdrop.MouseButton1Click:Connect(function()
 		clickgui.Visible = false
