@@ -7459,6 +7459,31 @@ local menuok, menuerr = pcall(function()
 	close.MouseEnter:Connect(function() close.TextColor3 = Color3.fromRGB(240, 90, 90) end)
 	close.MouseLeave:Connect(function() close.TextColor3 = Color3.fromRGB(200, 120, 120) end)
 
+	-- Always-visible Self Destruct (Uninject) — heavily used for beta testing.
+	local selfdestruct = Instance.new('TextButton')
+	selfdestruct.Name = 'SelfDestruct'
+	selfdestruct.Size = UDim2.fromOffset(104, 26)
+	selfdestruct.Position = UDim2.new(1, -152, 0, 10)
+	selfdestruct.BackgroundColor3 = Color3.fromRGB(150, 20, 20)
+	selfdestruct.AutoButtonColor = false
+	selfdestruct.Font = Enum.Font.GothamBold
+	selfdestruct.Text = 'SELF DESTRUCT'
+	selfdestruct.TextSize = 10
+	selfdestruct.TextColor3 = Color3.fromRGB(255, 222, 222)
+	selfdestruct.ZIndex = 4
+	selfdestruct.Parent = header
+	addCorner(selfdestruct, UDim.new(0, 5))
+	local sdstroke = Instance.new('UIStroke')
+	sdstroke.Color = Color3.fromRGB(220, 60, 60)
+	sdstroke.Thickness = 1
+	sdstroke.Transparency = 0.3
+	sdstroke.Parent = selfdestruct
+	selfdestruct.MouseEnter:Connect(function() selfdestruct.BackgroundColor3 = Color3.fromRGB(205, 30, 30) end)
+	selfdestruct.MouseLeave:Connect(function() selfdestruct.BackgroundColor3 = Color3.fromRGB(150, 20, 20) end)
+	selfdestruct.MouseButton1Click:Connect(function()
+		pcall(function() mainapi:Uninject() end)
+	end)
+
 	local dragging, dragStart, startPos
 	header.InputBegan:Connect(function(io)
 		if io.UserInputType == Enum.UserInputType.MouseButton1 or io.UserInputType == Enum.UserInputType.Touch then
