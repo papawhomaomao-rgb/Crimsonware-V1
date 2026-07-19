@@ -4604,6 +4604,496 @@ run(function()
 end)
 
 run(function()
+    local Shaders
+    local Preset, Quality, TargetFPS
+    local Adaptive, FutureLighting, DepthField, PreserveSky, Persist
+    local ExposureAdj, BrightnessAdj, SaturationAdj, ContrastAdj, BloomStrength, AtmosphereStrength
+
+    local oldsettings = {}
+    local disabledEffects = {}
+    local fx = {}
+    local targetScalars = {}
+    local tierIndex = 3
+    local frameCount = 0
+    local clockLast = 0
+    local applyFlag = false
+
+    local snapshotProps = {
+    	'Brightness', 'ExposureCompensation', 'Ambient', 'OutdoorAmbient',
+    	'ColorShift_Top', 'ColorShift_Bottom', 'EnvironmentDiffuseScale',
+    	'EnvironmentSpecularScale', 'GlobalShadows', 'ShadowSoftness',
+    	'Technology', 'ClockTime', 'GeographicLatitude', 'FogColor', 'FogStart', 'FogEnd'
+    }
+    local tierOrder = {Performance = 1, Balanced = 2, Quality = 3, Ultra = 4}
+    local softByTier = {0, 0.4, 0.8, 1}
+    local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local effectClasses = {
+    	ColorCorrectionEffect = true,
+    	BloomEffect = true,
+    	SunRaysEffect = true,
+    	DepthOfFieldEffect = true,
+    	BlurEffect = true
+    }
+
+    local presets = {
+    	['Realistic'] = {
+    		cc = {Brightness = 0, Contrast = 0.1, Saturation = 0.12, Tint = Color3.fromRGB(247, 246, 252)},
+    		bloom = {Intensity = 0.55, Size = 24, Threshold = 1.35},
+    		sun = {Intensity = 0.12, Spread = 0.85},
+    		atmos = {Density = 0.34, Offset = 0.2, Glare = 0.15, Haze = 1.4, Color = Color3.fromRGB(199, 220, 255), Decay = Color3.fromRGB(92, 100, 115)},
+    		dof = {FocusDistance = 55, InFocusRadius = 35, NearIntensity = 0, FarIntensity = 0.35},
+    		light = {Brightness = 2, Exposure = 0.15, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.45, Ambient = Color3.fromRGB(70, 70, 78), OutdoorAmbient = Color3.fromRGB(120, 125, 135), ColorShiftTop = Color3.fromRGB(255, 250, 240), FogColor = Color3.fromRGB(185, 205, 230), FogStart = 0, FogEnd = 5000}
+    	},
+    	['Ultra Realistic'] = {
+    		cc = {Brightness = 0.02, Contrast = 0.14, Saturation = 0.18, Tint = Color3.fromRGB(250, 249, 255)},
+    		bloom = {Intensity = 0.7, Size = 30, Threshold = 1.5},
+    		sun = {Intensity = 0.18, Spread = 1},
+    		atmos = {Density = 0.42, Offset = 0.28, Glare = 0.35, Haze = 1.9, Color = Color3.fromRGB(205, 224, 255), Decay = Color3.fromRGB(86, 96, 112)},
+    		dof = {FocusDistance = 70, InFocusRadius = 45, NearIntensity = 0, FarIntensity = 0.5},
+    		light = {Brightness = 2.2, Exposure = 0.25, EnvDiffuse = 1, EnvSpecular = 1.1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(60, 62, 72), OutdoorAmbient = Color3.fromRGB(110, 118, 132), ColorShiftTop = Color3.fromRGB(255, 248, 236), FogColor = Color3.fromRGB(180, 202, 232), FogStart = 0, FogEnd = 6000}
+    	},
+    	['Cinematic'] = {
+    		cc = {Brightness = -0.02, Contrast = 0.22, Saturation = -0.05, Tint = Color3.fromRGB(255, 238, 220)},
+    		bloom = {Intensity = 0.8, Size = 34, Threshold = 1.2},
+    		sun = {Intensity = 0.22, Spread = 1},
+    		atmos = {Density = 0.4, Offset = 0.15, Glare = 0.4, Haze = 2.2, Color = Color3.fromRGB(150, 180, 230), Decay = Color3.fromRGB(60, 70, 95)},
+    		dof = {FocusDistance = 40, InFocusRadius = 25, NearIntensity = 0.1, FarIntensity = 0.7},
+    		light = {Brightness = 1.8, Exposure = 0.1, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.7, Ambient = Color3.fromRGB(48, 48, 60), OutdoorAmbient = Color3.fromRGB(100, 105, 120), ColorShiftTop = Color3.fromRGB(255, 236, 214), FogColor = Color3.fromRGB(140, 160, 200), FogStart = 0, FogEnd = 4000}
+    	},
+    	['Vibrant'] = {
+    		cc = {Brightness = 0.05, Contrast = 0.16, Saturation = 0.55, Tint = Color3.fromRGB(255, 252, 248)},
+    		bloom = {Intensity = 0.9, Size = 26, Threshold = 1.1},
+    		sun = {Intensity = 0.2, Spread = 0.9},
+    		atmos = {Density = 0.28, Offset = 0.2, Glare = 0.25, Haze = 1, Color = Color3.fromRGB(210, 228, 255), Decay = Color3.fromRGB(110, 120, 140)},
+    		dof = {FocusDistance = 80, InFocusRadius = 60, NearIntensity = 0, FarIntensity = 0.2},
+    		light = {Brightness = 2.4, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.35, Ambient = Color3.fromRGB(85, 85, 90), OutdoorAmbient = Color3.fromRGB(140, 145, 155), ColorShiftTop = Color3.fromRGB(255, 252, 245), FogColor = Color3.fromRGB(200, 220, 245), FogStart = 0, FogEnd = 8000}
+    	},
+    	['Dreamy'] = {
+    		cc = {Brightness = 0.08, Contrast = -0.08, Saturation = 0.1, Tint = Color3.fromRGB(255, 244, 238)},
+    		bloom = {Intensity = 1.2, Size = 40, Threshold = 0.9},
+    		sun = {Intensity = 0.28, Spread = 1},
+    		atmos = {Density = 0.5, Offset = 0.35, Glare = 0.5, Haze = 2.8, Color = Color3.fromRGB(255, 220, 225), Decay = Color3.fromRGB(150, 150, 170)},
+    		dof = {FocusDistance = 60, InFocusRadius = 30, NearIntensity = 0.05, FarIntensity = 0.5},
+    		light = {Brightness = 2.1, Exposure = 0.25, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.9, Ambient = Color3.fromRGB(95, 88, 95), OutdoorAmbient = Color3.fromRGB(150, 140, 150), ColorShiftTop = Color3.fromRGB(255, 240, 235), FogColor = Color3.fromRGB(235, 215, 225), FogStart = 0, FogEnd = 5000}
+    	},
+    	['Noir'] = {
+    		cc = {Brightness = -0.03, Contrast = 0.3, Saturation = -0.85, Tint = Color3.fromRGB(225, 232, 245)},
+    		bloom = {Intensity = 0.5, Size = 22, Threshold = 1.4},
+    		sun = {Intensity = 0.1, Spread = 0.8},
+    		atmos = {Density = 0.45, Offset = 0.1, Glare = 0.2, Haze = 2, Color = Color3.fromRGB(170, 185, 210), Decay = Color3.fromRGB(55, 62, 78)},
+    		dof = {FocusDistance = 45, InFocusRadius = 25, NearIntensity = 0.1, FarIntensity = 0.6},
+    		light = {Brightness = 1.6, Exposure = 0.05, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(55, 58, 66), OutdoorAmbient = Color3.fromRGB(95, 100, 112), ColorShiftTop = Color3.fromRGB(235, 240, 250), FogColor = Color3.fromRGB(150, 160, 180), FogStart = 0, FogEnd = 4000}
+    	},
+    	['Golden Hour'] = {
+    		cc = {Brightness = 0.03, Contrast = 0.14, Saturation = 0.25, Tint = Color3.fromRGB(255, 232, 200)},
+    		bloom = {Intensity = 0.85, Size = 30, Threshold = 1.15},
+    		sun = {Intensity = 0.3, Spread = 1},
+    		atmos = {Density = 0.4, Offset = 0.25, Glare = 0.45, Haze = 2, Color = Color3.fromRGB(255, 200, 150), Decay = Color3.fromRGB(120, 90, 80)},
+    		dof = {FocusDistance = 65, InFocusRadius = 45, NearIntensity = 0, FarIntensity = 0.4},
+    		light = {Brightness = 2, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(90, 75, 65), OutdoorAmbient = Color3.fromRGB(150, 120, 100), ColorShiftTop = Color3.fromRGB(255, 225, 190), FogColor = Color3.fromRGB(255, 205, 165), FogStart = 0, FogEnd = 5000, ClockTime = 15.7}
+    	}
+    }
+    local presetList = {'Realistic', 'Ultra Realistic', 'Cinematic', 'Vibrant', 'Dreamy', 'Noir', 'Golden Hour'}
+
+    local function setProp(obj, prop, value)
+    	pcall(function()
+    		obj[prop] = value
+    	end)
+    end
+
+    local function smooth(obj, props)
+    	pcall(function()
+    		tweenService:Create(obj, tweenInfo, props):Play()
+    	end)
+    end
+
+    local function getFx(class)
+    	local inst = fx[class]
+    	if inst and inst.Parent then
+    		return inst
+    	end
+    	inst = Instance.new(class)
+    	inst.Name = 'Crimson'..class
+    	inst.Parent = lightingService
+    	fx[class] = inst
+    	return inst
+    end
+
+    local function offset(slider)
+    	return (slider.Value - 100) / 100
+    end
+
+    local function multiplier(slider)
+    	return slider.Value / 100
+    end
+
+    local function snapshot()
+    	table.clear(oldsettings)
+    	for _, prop in snapshotProps do
+    		local ok, value = pcall(function()
+    			return lightingService[prop]
+    		end)
+    		if ok then
+    			oldsettings[prop] = value
+    		end
+    	end
+    end
+
+    local function clearExistingEffects()
+    	for _, v in lightingService:GetChildren() do
+    		if fx[v.ClassName] == v then continue end
+    		local cls = v.ClassName
+    		if effectClasses[cls] then
+    			if v.Enabled then
+    				v.Enabled = false
+    				table.insert(disabledEffects, {inst = v, prop = 'Enabled', old = true})
+    			end
+    		elseif cls == 'Atmosphere' then
+    			table.insert(disabledEffects, {inst = v, prop = 'Parent', old = v.Parent})
+    			v.Parent = nil
+    		elseif cls == 'Sky' and not PreserveSky.Enabled then
+    			table.insert(disabledEffects, {inst = v, prop = 'Parent', old = v.Parent})
+    			v.Parent = nil
+    		end
+    	end
+    end
+
+    local function restoreEffects()
+    	for _, e in disabledEffects do
+    		setProp(e.inst, e.prop, e.old)
+    	end
+    	table.clear(disabledEffects)
+    end
+
+    local function applyConfig()
+    	if not Shaders.Enabled or applyFlag then return end
+    	applyFlag = true
+
+    	local preset = presets[Preset.Value] or presets['Realistic']
+    	local tier = tierIndex
+    	local useFuture = FutureLighting.Enabled and tier >= 3
+    	local useDOF = DepthField.Enabled and tier >= 3
+    	local useSun = tier >= 2
+    	local softScale = softByTier[tier] or 1
+
+    	table.clear(targetScalars)
+    	local L = preset.light
+    	targetScalars.Brightness = L.Brightness + offset(BrightnessAdj)
+    	targetScalars.ExposureCompensation = L.Exposure + offset(ExposureAdj)
+    	targetScalars.EnvironmentDiffuseScale = L.EnvDiffuse or 1
+    	targetScalars.EnvironmentSpecularScale = L.EnvSpecular or 1
+    	targetScalars.ShadowSoftness = (L.ShadowSoftness or 0.5) * softScale
+    	targetScalars.Ambient = L.Ambient
+    	targetScalars.OutdoorAmbient = L.OutdoorAmbient
+    	targetScalars.ColorShift_Top = L.ColorShiftTop or Color3.new()
+    	targetScalars.GlobalShadows = true
+    	targetScalars.FogColor = L.FogColor
+    	targetScalars.FogStart = L.FogStart or 0
+    	targetScalars.FogEnd = L.FogEnd or 100000
+    	if useFuture then
+    		targetScalars.Technology = Enum.Technology.Future
+    	elseif tier == 2 then
+    		targetScalars.Technology = Enum.Technology.ShadowMap
+    	end
+    	if L.ClockTime then
+    		targetScalars.ClockTime = L.ClockTime
+    	end
+
+    	for prop, value in targetScalars do
+    		setProp(lightingService, prop, value)
+    	end
+
+    	local cc = getFx('ColorCorrectionEffect')
+    	cc.Enabled = true
+    	smooth(cc, {
+    		Brightness = preset.cc.Brightness,
+    		Contrast = preset.cc.Contrast + offset(ContrastAdj),
+    		Saturation = preset.cc.Saturation + offset(SaturationAdj),
+    		TintColor = preset.cc.Tint
+    	})
+
+    	local bloom = getFx('BloomEffect')
+    	bloom.Enabled = true
+    	smooth(bloom, {
+    		Intensity = preset.bloom.Intensity * multiplier(BloomStrength),
+    		Size = preset.bloom.Size,
+    		Threshold = preset.bloom.Threshold
+    	})
+
+    	local atmos = getFx('Atmosphere')
+    	local atmosMult = multiplier(AtmosphereStrength)
+    	smooth(atmos, {
+    		Density = math.clamp(preset.atmos.Density * atmosMult, 0, 1),
+    		Offset = preset.atmos.Offset,
+    		Glare = preset.atmos.Glare,
+    		Haze = math.clamp(preset.atmos.Haze * atmosMult, 0, 10),
+    		Color = preset.atmos.Color,
+    		Decay = preset.atmos.Decay
+    	})
+
+    	if useSun then
+    		local sun = getFx('SunRaysEffect')
+    		sun.Enabled = true
+    		smooth(sun, {Intensity = preset.sun.Intensity, Spread = preset.sun.Spread})
+    	elseif fx.SunRaysEffect then
+    		fx.SunRaysEffect.Enabled = false
+    	end
+
+    	if useDOF then
+    		local dof = getFx('DepthOfFieldEffect')
+    		dof.Enabled = true
+    		smooth(dof, {
+    			FocusDistance = preset.dof.FocusDistance,
+    			InFocusRadius = preset.dof.InFocusRadius,
+    			NearIntensity = preset.dof.NearIntensity,
+    			FarIntensity = preset.dof.FarIntensity
+    		})
+    	elseif fx.DepthOfFieldEffect then
+    		fx.DepthOfFieldEffect.Enabled = false
+    	end
+
+    	applyFlag = false
+    end
+
+    local function reapplyScalars()
+    	if applyFlag or not next(targetScalars) then return end
+    	applyFlag = true
+    	for prop, value in targetScalars do
+    		setProp(lightingService, prop, value)
+    	end
+    	applyFlag = false
+    end
+
+    Shaders = vape.Categories.Render:CreateModule({
+    	Name = 'Shaders',
+    	Function = function(callback)
+    		if callback then
+    			snapshot()
+    			clearExistingEffects()
+    			tierIndex = tierOrder[Quality.Value] or 3
+    			applyConfig()
+
+    			Shaders:Clean(lightingService.ChildAdded:Connect(function(v)
+    				if not Shaders.Enabled or not Persist.Enabled then return end
+    				if fx[v.ClassName] == v then return end
+    				task.defer(function()
+    					if not Shaders.Enabled or not Persist.Enabled then return end
+    					if fx[v.ClassName] == v then return end
+    					if effectClasses[v.ClassName] and v.Enabled then
+    						v.Enabled = false
+    						table.insert(disabledEffects, {inst = v, prop = 'Enabled', old = true})
+    					end
+    				end)
+    			end))
+
+    			frameCount = 0
+    			clockLast = os.clock()
+    			Shaders:Clean(runService.RenderStepped:Connect(function()
+    				frameCount += 1
+    			end))
+
+    			task.spawn(function()
+    				while Shaders.Enabled do
+    					task.wait(0.5)
+    					if not Shaders.Enabled then break end
+    					local now = os.clock()
+    					local delta = now - clockLast
+    					clockLast = now
+    					local fps = delta > 0 and (frameCount / delta) or 60
+    					frameCount = 0
+
+    					local cap = tierOrder[Quality.Value] or 3
+    					if Adaptive.Enabled then
+    						local target = TargetFPS.Value
+    						if fps < target - 3 and tierIndex > 1 then
+    							tierIndex -= 1
+    							applyConfig()
+    						elseif fps > target + 12 and tierIndex < cap then
+    							tierIndex += 1
+    							applyConfig()
+    						end
+    					elseif tierIndex ~= cap then
+    						tierIndex = cap
+    						applyConfig()
+    					end
+
+    					if Persist.Enabled then
+    						reapplyScalars()
+    					end
+    				end
+    			end)
+    		else
+    			applyFlag = true
+    			for _, inst in fx do
+    				pcall(function()
+    					inst:Destroy()
+    				end)
+    			end
+    			table.clear(fx)
+    			for prop, value in oldsettings do
+    				setProp(lightingService, prop, value)
+    			end
+    			table.clear(oldsettings)
+    			restoreEffects()
+    			table.clear(targetScalars)
+    			applyFlag = false
+    		end
+    	end,
+    	Tooltip = 'Full graphics overhaul - realistic lighting, post processing and atmosphere with adaptive FPS to keep frame rates steady.'
+    })
+    Preset = Shaders:CreateDropdown({
+    	Name = 'Preset',
+    	List = presetList,
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end,
+    	Tooltip = 'The visual style applied to the world.'
+    })
+    Quality = Shaders:CreateDropdown({
+    	Name = 'Quality',
+    	List = {'Quality', 'Ultra', 'Balanced', 'Performance'},
+    	Function = function()
+    		if Shaders.Enabled and not Adaptive.Enabled then
+    			tierIndex = tierOrder[Quality.Value] or 3
+    			applyConfig()
+    		end
+    	end,
+    	Tooltip = 'Caps how heavy the effects get.\nPerformance - cheapest, no realtime shadows\nBalanced - shadow maps\nQuality - future lighting\nUltra - future lighting + depth of field\nWith Adaptive FPS on this is the highest tier it may use.'
+    })
+    TargetFPS = Shaders:CreateSlider({
+    	Name = 'Target FPS',
+    	Min = 30,
+    	Max = 240,
+    	Default = 60,
+    	Darker = true,
+    	Suffix = ' FPS'
+    })
+    Adaptive = Shaders:CreateToggle({
+    	Name = 'Adaptive FPS',
+    	Default = true,
+    	Function = function(callback)
+    		if TargetFPS then
+    			TargetFPS.Object.Visible = callback
+    		end
+    		if Shaders.Enabled then
+    			tierIndex = tierOrder[Quality.Value] or 3
+    			applyConfig()
+    		end
+    	end,
+    	Tooltip = 'Automatically scales quality down to hold your target frame rate, then back up when there is headroom.'
+    })
+    FutureLighting = Shaders:CreateToggle({
+    	Name = 'Future Lighting',
+    	Default = true,
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end,
+    	Tooltip = 'Realtime specular reflections and soft shadows. The core of the realistic look, but the heaviest effect (Quality tier or higher).'
+    })
+    DepthField = Shaders:CreateToggle({
+    	Name = 'Depth of Field',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end,
+    	Tooltip = 'Cinematic focus blur on distant objects. Adds depth but costs frames (Quality tier or higher).'
+    })
+    PreserveSky = Shaders:CreateToggle({
+    	Name = 'Preserve Skybox',
+    	Default = true,
+    	Function = function()
+    		if Shaders.Enabled then
+    			Shaders:Toggle()
+    			Shaders:Toggle()
+    		end
+    	end,
+    	Tooltip = 'Keep the game original sky. Turn off to let the atmosphere fully take over the horizon.'
+    })
+    Persist = Shaders:CreateToggle({
+    	Name = 'Persist',
+    	Default = true,
+    	Tooltip = 'Reapply the look if the game tries to reset lighting (day/night scripts etc).'
+    })
+    ExposureAdj = Shaders:CreateSlider({
+    	Name = 'Exposure',
+    	Min = 0,
+    	Max = 200,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+    BrightnessAdj = Shaders:CreateSlider({
+    	Name = 'Brightness',
+    	Min = 0,
+    	Max = 200,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+    SaturationAdj = Shaders:CreateSlider({
+    	Name = 'Saturation',
+    	Min = 0,
+    	Max = 200,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+    ContrastAdj = Shaders:CreateSlider({
+    	Name = 'Contrast',
+    	Min = 0,
+    	Max = 200,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+    BloomStrength = Shaders:CreateSlider({
+    	Name = 'Bloom',
+    	Min = 0,
+    	Max = 300,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+    AtmosphereStrength = Shaders:CreateSlider({
+    	Name = 'Atmosphere',
+    	Min = 0,
+    	Max = 200,
+    	Default = 100,
+    	Suffix = '%',
+    	Function = function()
+    		if Shaders.Enabled then
+    			applyConfig()
+    		end
+    	end
+    })
+end)
+
+run(function()
     local GamingChair = {Enabled = false}
     local Color
     local wheelpositions = {
