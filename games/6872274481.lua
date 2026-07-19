@@ -8384,7 +8384,8 @@ run(function()
     								if (FireRate[data[1].itemType] or 0) < tick() then
     									local hotbar, old = getHotbar(data[1].tool), store.hand.tool and getHotbar(store.hand.tool) or 0
     									if hotbar and old and hotbarSwitch(hotbar) then
-    										local ignore = vape.Modules['Silent Aura'].Enabled or not inputService.MouseEnabled
+    										local silentaura = vape.Modules['Silent Aura']
+    										local ignore = (silentaura and silentaura.Enabled) or not inputService.MouseEnabled
     										task.wait(Delay.Value)
     										shootFunc()
     										if vape.Modules['Auto Clicker'].Enabled and not ignore then
