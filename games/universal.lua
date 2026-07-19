@@ -251,6 +251,22 @@ vape.Libraries.entity = entitylib
 vape.Libraries.whitelist = whitelist
 vape.Libraries.prediction = prediction
 vape.Libraries.hash = hash
+vape.Libraries.string = loadstring(downloadFile('crimsonware/libraries/string.lua'), 'string')()
+vape.Libraries.calculatePosition = function(_, toPart)
+	-- The world position the server validates a melee hit against. selfPosition
+	-- in the attack payload is reach-spoofed to sit just inside melee range of
+	-- this point, so returning the target's real position keeps that distance
+	-- valid and the hit registers. This was referenced by Killaura but never
+	-- registered after the fork, so the aura's attack packet threw on every
+	-- in-range target and no damage ever landed.
+	if typeof(toPart) == 'Vector3' then
+		return toPart
+	end
+	if typeof(toPart) == 'Instance' and toPart:IsA('BasePart') then
+		return toPart.Position
+	end
+	return Vector3.zero
+end
 vape.Libraries.auraanims = {
 	Normal = {
 		{CFrame = CFrame.new(-0.17, -0.14, -0.12) * CFrame.Angles(math.rad(-53), math.rad(50), math.rad(-64)), Time = 0.1},
