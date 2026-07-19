@@ -1862,7 +1862,9 @@ run(function()
     	local CustomProperties
     	local WallCheck
     	local PlatformStanding
+    	local AntiLagback, SpeedLimit, Recovery, VoidRescue
     	local Platform, YLevel, OldYLevel
+    	local lastSafeCFrame, lastSafeTick, lastRootPos, pauseUntil = nil, 0, nil, 0
     	local w, s, a, d, up, down = 0, 0, 0, 0, 0, 0
     	local rayCheck = RaycastParams.new()
     	rayCheck.RespectCanCollide = true
@@ -1955,11 +1957,65 @@ run(function()
     							entitylib.character.Humanoid:ChangeState(Enum.HumanoidStateType[State.Value])
     						end
 
-    						SpeedMethods[Mode.Value](Options, TargetStrafeVector or MoveMethod.Value == 'Direct' and calculateMoveVector(Vector3.new(a + d, 0, w + s)) or entitylib.character.Humanoid.MoveDirection, dt)
-    						Functions[FloatMode.Value](dt)
+    						local root = entitylib.character.RootPart
+    						if AntiLagback.Enabled then
+    							local now = tick()
+    							if now < pauseUntil then
+    								root.AssemblyLinearVelocity = Vector3.zero
+    								lastRootPos = root.Position
+    								return
+    							end
+    							if lastRootPos then
+    								local horDelta = ((root.Position - lastRootPos) * Vector3.new(1, 0, 1)).Magnitude
+    								local yDrop = lastRootPos.Y - root.Position.Y
+    								local horLimit = math.max(SpeedLimit.Value * dt * 3, 20)
+    								local yLimit = math.max(SpeedLimit.Value * dt + 5, 15)
+    								if horDelta > horLimit or yDrop > yLimit then
+    									if lastSafeCFrame then root.CFrame = lastSafeCFrame end
+    									root.AssemblyLinearVelocity = Vector3.zero
+    									YLevel, OldYLevel = nil, nil
+    									pauseUntil = now + Recovery.Value
+    									lastRootPos = root.Position
+    									return
+    								end
+    							end
+    							if VoidRescue.Enabled and root.Position.Y < workspace.FallenPartsDestroyHeight + 25 then
+    								if lastSafeCFrame then root.CFrame = lastSafeCFrame end
+    								root.AssemblyLinearVelocity = Vector3.zero
+    								YLevel, OldYLevel = nil, nil
+    								pauseUntil = now + Recovery.Value
+    								lastRootPos = root.Position
+    								return
+    							end
+    							if now - lastSafeTick >= 0.25 then
+    								lastSafeCFrame = root.CFrame
+    								lastSafeTick = now
+    							end
+    						end
+
+    						local moveVector = TargetStrafeVector or MoveMethod.Value == 'Direct' and calculateMoveVector(Vector3.new(a + d, 0, w + s)) or entitylib.character.Humanoid.MoveDirection
+    						if AntiLagback.Enabled and Options.Value.Value > SpeedLimit.Value then
+    							local originalValue = Options.Value
+    							Options.Value = {Value = SpeedLimit.Value}
+    							local ok, err = pcall(function()
+    								SpeedMethods[Mode.Value](Options, moveVector, dt)
+    								Functions[FloatMode.Value](dt)
+    							end)
+    							Options.Value = originalValue
+    							if not ok then error(err) end
+    						else
+    							SpeedMethods[Mode.Value](Options, moveVector, dt)
+    							Functions[FloatMode.Value](dt)
+    						end
+    						if AntiLagback.Enabled then
+    							lastRootPos = root.Position
+    						end
     					else
     						YLevel = nil
     						OldYLevel = nil
+    						lastSafeCFrame = nil
+    						lastRootPos = nil
+    						pauseUntil = 0
     					end
     				end))
 
@@ -1996,6 +2052,8 @@ run(function()
     				end
     			else
     				YLevel, OldYLevel = nil, nil
+    				lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, 0
+    				lastSafeTick = 0
     				if entitylib.isAlive then
     					if PlatformStanding.Enabled then
     						entitylib.character.Humanoid.PlatformStand = false
@@ -2197,6 +2255,51 @@ run(function()
     			end
     		end,
     		Default = true
+    	})
+    	AntiLagback = Fly:CreateToggle({
+    		Name = 'Anti Lagback',
+    		Default = true,
+    		Function = function(callback)
+    			task.defer(function()
+    				if SpeedLimit and SpeedLimit.Object then SpeedLimit.Object.Visible = callback end
+    				if Recovery and Recovery.Object then Recovery.Object.Visible = callback end
+    				if VoidRescue and VoidRescue.Object then VoidRescue.Object.Visible = callback end
+    			end)
+    			if Fly.Enabled then
+    				lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, 0
+    				lastSafeTick = 0
+    			end
+    		end,
+    		Tooltip = 'Caps per-tick movement and rubber-bands out of snapbacks / the void so server anticheat has nothing to flag'
+    	})
+    	SpeedLimit = Fly:CreateSlider({
+    		Name = 'Speed Limit',
+    		Min = 16,
+    		Max = 200,
+    		Default = 60,
+    		Darker = true,
+    		Suffix = function(val)
+    			return val == 1 and 'stud/s' or 'studs/s'
+    		end,
+    		Tooltip = 'Hard cap on the horizontal speed Fly is allowed to apply, regardless of the Speed slider above'
+    	})
+    	Recovery = Fly:CreateSlider({
+    		Name = 'Recovery Delay',
+    		Min = 0,
+    		Max = 1,
+    		Decimal = 100,
+    		Default = 0.25,
+    		Darker = true,
+    		Suffix = function(val)
+    			return val == 1 and 'second' or 'seconds'
+    		end,
+    		Tooltip = 'Pause after a snapback / void catch before Fly re-engages'
+    	})
+    	VoidRescue = Fly:CreateToggle({
+    		Name = 'Void Rescue',
+    		Default = true,
+    		Darker = true,
+    		Tooltip = 'Snap back to the last known safe position if you fall below the map'
     	})
     end)
 end)
