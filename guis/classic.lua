@@ -54,10 +54,10 @@ local tween = {
 	tweenstwo = {}
 }
 local uipallet = {
-	Main = Color3.fromRGB(20, 11, 11),
-	Text = Color3.fromRGB(226, 194, 194),
-	Font = Font.fromEnum(Enum.Font.Arial),
-	FontSemiBold = Font.fromEnum(Enum.Font.Arial, Enum.FontWeight.SemiBold),
+	Main = Color3.fromRGB(17, 12, 13),
+	Text = Color3.fromRGB(234, 210, 210),
+	Font = Font.fromEnum(Enum.Font.Gotham),
+	FontSemiBold = Font.fromEnum(Enum.Font.Gotham, Enum.FontWeight.SemiBold),
 	Tween = TweenInfo.new(0.16, Enum.EasingStyle.Linear)
 }
 
@@ -143,7 +143,7 @@ local getfontsize = function(text, size, font)
 	return textService:GetTextBoundsAsync(fontsize)
 end
 
-local function addBlur(parent, notif)
+local function addBlur(parent, notif, noedge)
 	local blur = Instance.new('ImageLabel')
 	blur.Name = 'Blur'
 	blur.Size = UDim2.new(1, 89, 1, 52)
@@ -154,12 +154,32 @@ local function addBlur(parent, notif)
 	blur.SliceCenter = Rect.new(52, 31, 261, 502)
 	blur.Parent = parent
 
+	-- Fire edge: a faint ember-to-crimson rim that lights every menu panel
+	-- from below, kept subtle so the chrome stays clean rather than neon.
+	if not (notif or noedge) then
+		local edge = Instance.new('UIStroke')
+		edge.Name = 'FireEdge'
+		edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+		edge.Thickness = 1
+		edge.Transparency = 0.55
+		edge.Parent = parent
+
+		local grad = Instance.new('UIGradient')
+		grad.Rotation = 90
+		grad.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(120, 30, 32)),
+			ColorSequenceKeypoint.new(0.5, Color3.fromRGB(190, 44, 40)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 128, 48))
+		})
+		grad.Parent = edge
+	end
+
 	return blur
 end
 
 local function addCorner(parent, radius)
 	local corner = Instance.new('UICorner')
-	corner.CornerRadius = radius or UDim.new(0, 5)
+	corner.CornerRadius = radius or UDim.new(0, 6)
 	corner.Parent = parent
 
 	return corner
@@ -850,7 +870,7 @@ components = {
 			self.Rainbow = not self.Rainbow
 			if self.Rainbow then
 				table.insert(mainapi.RainbowTable, self)
-				rainbow1.ImageColor3 = Color3.fromRGB(5, 127, 100)
+				rainbow1.ImageColor3 = Color3.fromRGB(255, 138, 44)
 				task.delay(0.1, function()
 					if not self.Rainbow then return end
 					rainbow2.ImageColor3 = Color3.fromRGB(228, 125, 43)
@@ -1751,7 +1771,7 @@ components = {
 			Window = {Visible = false},
 			Index = getTableSize(api.Options)
 		}
-		optionsettings.Color = optionsettings.Color or Color3.fromRGB(5, 134, 105)
+		optionsettings.Color = optionsettings.Color or Color3.fromRGB(196, 40, 40)
 		
 		local textlist = Instance.new('TextButton')
 		textlist.Name = optionsettings.Name..'TextList'
@@ -3499,7 +3519,7 @@ function mainapi:CreateGUI()
 				knob.Image = rainbowknob
 				table.insert(mainapi.RainbowTable, self)
 
-				rainbow1.ImageColor3 = Color3.fromRGB(5, 127, 100)
+				rainbow1.ImageColor3 = Color3.fromRGB(255, 138, 44)
 				rainbowthread = task.delay(0.1, function()
 					rainbow2.ImageColor3 = Color3.fromRGB(228, 125, 43)
 					rainbowthread = task.delay(0.1, function()
@@ -4347,7 +4367,7 @@ function mainapi:CreateCategoryList(categorysettings)
 		Objects = {},
 		Options = {}
 	}
-	categorysettings.Color = categorysettings.Color or Color3.fromRGB(5, 134, 105)
+	categorysettings.Color = categorysettings.Color or Color3.fromRGB(196, 40, 40)
 
 	local window = Instance.new('TextButton')
 	window.Name = categorysettings.Name..'CategoryList'
@@ -5301,7 +5321,7 @@ function mainapi:CreateLegit()
 			modulechildren.Parent = scaledgui
 			makeDraggable(modulechildren, window)
 			local objectstroke = Instance.new('UIStroke')
-			objectstroke.Color = Color3.fromRGB(5, 134, 105)
+			objectstroke.Color = Color3.fromRGB(196, 40, 40)
 			objectstroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 			objectstroke.Thickness = 0
 			objectstroke.Parent = modulechildren
@@ -5957,7 +5977,7 @@ tooltip.TextColor3 = color.Dark(uipallet.Text, 0.16)
 tooltip.TextSize = 12
 tooltip.FontFace = uipallet.Font
 tooltip.Parent = scaledgui
-toolblur = addBlur(tooltip)
+toolblur = addBlur(tooltip, nil, true)
 addCorner(tooltip)
 local toolstrokebkg = Instance.new('Frame')
 toolstrokebkg.Size = UDim2.new(1, -2, 1, -2)
@@ -6074,7 +6094,7 @@ local friendssettings = {
 	Icon = getcustomasset('crimsonware/assets/new/friendstab.png'),
 	Size = UDim2.fromOffset(17, 16),
 	Placeholder = 'Roblox username',
-	Color = Color3.fromRGB(5, 134, 105),
+	Color = Color3.fromRGB(196, 40, 40),
 	Function = function()
 		friends.Update:Fire()
 		friends.ColorUpdate:Fire(friendscolor.Hue, friendscolor.Sat, friendscolor.Value)
@@ -6789,7 +6809,7 @@ targetinfobkg.Size = UDim2.fromOffset(240, 89)
 targetinfobkg.BackgroundColor3 = color.Dark(uipallet.Main, 0.1)
 targetinfobkg.BackgroundTransparency = 0.5
 targetinfobkg.Parent = targetinfoobj.Children
-local targetinfoblurobj = addBlur(targetinfobkg)
+local targetinfoblurobj = addBlur(targetinfobkg, nil, true)
 targetinfoblurobj.Visible = false
 addCorner(targetinfobkg)
 local targetinfoshot = Instance.new('ImageLabel')
@@ -6804,7 +6824,7 @@ targetinfoshotflash.BackgroundTransparency = 1
 targetinfoshotflash.BackgroundColor3 = Color3.new(1, 0, 0)
 targetinfoshotflash.Parent = targetinfoshot
 addCorner(targetinfoshotflash)
-local targetinfoshotblur = addBlur(targetinfoshot)
+local targetinfoshotblur = addBlur(targetinfoshot, nil, true)
 targetinfoshotblur.Visible = false
 addCorner(targetinfoshot)
 local targetinfoname = Instance.new('TextLabel')
@@ -6860,7 +6880,7 @@ targetinfohealthextra.Parent = targetinfohealthbkg
 targetinfohealthextra:GetPropertyChangedSignal('Size'):Connect(function()
 	targetinfohealthextra.Visible = targetinfohealthextra.Size.X.Scale > 0.01
 end)
-local targetinfohealthblur = addBlur(targetinfohealthbkg)
+local targetinfohealthblur = addBlur(targetinfohealthbkg, nil, true)
 targetinfohealthblur.SliceCenter = Rect.new(52, 31, 261, 510)
 targetinfohealthblur.ImageColor3 = Color3.new()
 targetinfohealthblur.Visible = false
