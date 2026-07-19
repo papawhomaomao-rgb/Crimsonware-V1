@@ -3018,7 +3018,7 @@ run(function()
     local stack
     
     DamageBoost = vape.Categories.Blatant:CreateModule({
-    	Name = 'Damage Boost',
+    	Name = 'Damage Speed',
     	Function = function(callback)
     		if callback then
     			DamageBoost:Clean(vapeEvents.EntityDamageEvent.Event:Connect(function(damageTable)
@@ -3386,7 +3386,7 @@ run(function()
     end
     
     InstantKill = vape.Categories.Blatant:CreateModule({
-        Name = 'Instant Kill',
+        Name = 'Turret Aura',
         Function = function(callback)
             if callback then
                 repeat task.wait() until store.matchState ~= 0 or not InstantKill.Enabled
@@ -4653,7 +4653,7 @@ run(function()
     end
     
     OwlAura = vape.Categories.Blatant:CreateModule({
-        Name = 'Owl Aura',
+        Name = 'Whisper Aura',
         Function = function(callback)
             if callback then
                 local owls = collection('Owl', OwlAura, function(self, obj)
@@ -7478,7 +7478,7 @@ run(function()
     local old
 
     vape.Categories.Render:CreateModule({
-    	Name = 'Stream Remover',
+    	Name = 'Anti Streamer Mode',
     	Function = function(call)
     		if call then
     			old = bedwars.GamePlayer.canSeeThroughDisguise
