@@ -3129,10 +3129,12 @@ run(function()
     local WallCheck
     local PopBalloons
     local TP
+    local VoidRescueFly
     local rayCheck = RaycastParams.new()
     rayCheck.RespectCanCollide = true
     local up, down, old = 0, 0
-    
+    local lastSafeXZ, rescuePause = nil, 0
+
     Fly = vape.Categories.Blatant:CreateModule({
         Name = 'Fly',
         Function = function(callback)
@@ -3141,6 +3143,7 @@ run(function()
             if callback then
                 up, down, old = 0, 0, bedwars.BalloonController.deflateBalloon
                 bedwars.BalloonController.deflateBalloon = function() end
+                lastSafeXZ, rescuePause = nil, 0
                 local tpTick, tpToggle, oldy = tick(), true
     
                 if lplr.Character and (lplr.Character:GetAttribute('InflatedBalloons') or 0) == 0 and getItem('balloon') then
@@ -3175,10 +3178,17 @@ run(function()
                                     if not oldy then
                                         local ray = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rayCheck)
                                         if ray and TP.Enabled then
+                                            lastSafeXZ = Vector3.new(root.Position.X, ray.Position.Y + entitylib.character.HipHeight, root.Position.Z)
                                             tpToggle = false
                                             oldy = root.Position.Y
                                             tpTick = tick() + 0.07
-                                            root.CFrame = CFrame.lookAlong(Vector3.new(root.Position.X, ray.Position.Y + entitylib.character.HipHeight, root.Position.Z), root.CFrame.LookVector)
+                                            root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
+                                        elseif (not ray) and TP.Enabled and VoidRescueFly.Enabled and lastSafeXZ then
+                                            tpToggle = false
+                                            oldy = lastSafeXZ.Y
+                                            tpTick = tick() + 0.07
+                                            rescuePause = tick() + 1.2
+                                            root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
                                         end
                                     end
                                 end
@@ -3195,7 +3205,10 @@ run(function()
                                 end
                             end
                         end
-    
+
+                        if tick() < rescuePause then
+                            destination = Vector3.zero
+                        end
                         root.CFrame += destination
                         root.AssemblyLinearVelocity = (moveDirection * velo) + Vector3.new(0, mass, 0)
                     end
@@ -3267,6 +3280,11 @@ run(function()
     TP = Fly:CreateToggle({
         Name = 'TP Down',
         Default = true
+    })
+    VoidRescueFly = Fly:CreateToggle({
+        Name = 'Void Rescue',
+        Default = true,
+        Tooltip = 'When TP Down cannot find ground beneath you (over the void), teleport back to the last spot where it did — stops Bedwars from voiding you the moment you cross an island edge.'
     })
 end)
 
