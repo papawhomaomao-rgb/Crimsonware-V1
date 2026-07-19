@@ -1,0 +1,21 @@
+name: static checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  luau-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the Luau parser
+        run: pip install "tree-sitter==0.26.0" "tree_sitter_luau==1.2.0"
+
+      - name: Parse + reference-integrity sweep
+        run: python3 tools/luau_check.py

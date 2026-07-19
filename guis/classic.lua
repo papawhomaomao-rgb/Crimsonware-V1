@@ -3967,7 +3967,12 @@ function mainapi:CreateCategory(categorysettings)
 			if not multiple then
 				mainapi:UpdateTextGUI()
 			end
-			task.spawn(modulesettings.Function, self.Enabled)
+			task.spawn(function()
+				local ok, err = pcall(modulesettings.Function, self.Enabled)
+				if not ok then
+					mainapi:CreateNotification(modulesettings.Name, 'crashed — '..tostring(err), 10, 'alert')
+				end
+			end)
 		end
 
 		for i, v in components do
@@ -5349,7 +5354,12 @@ function mainapi:CreateLegit()
 				end
 				table.clear(moduleapi.Connections)
 			end
-			task.spawn(modulesettings.Function, moduleapi.Enabled)
+			task.spawn(function()
+				local ok, err = pcall(modulesettings.Function, moduleapi.Enabled)
+				if not ok then
+					mainapi:CreateNotification(modulesettings.Name, 'crashed — '..tostring(err), 10, 'alert')
+				end
+			end)
 		end
 
 		back.MouseEnter:Connect(function()
