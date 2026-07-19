@@ -4668,6 +4668,14 @@ run(function()
     		dof = {FocusDistance = 80, InFocusRadius = 60, NearIntensity = 0, FarIntensity = 0.2},
     		light = {Brightness = 2.4, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.35, Ambient = Color3.fromRGB(85, 85, 90), OutdoorAmbient = Color3.fromRGB(140, 145, 155), ColorShiftTop = Color3.fromRGB(255, 252, 245), FogColor = Color3.fromRGB(200, 220, 245), FogStart = 0, FogEnd = 8000}
     	},
+    	['Moody'] = {
+    		cc = {Brightness = -0.05, Contrast = 0.2, Saturation = -0.3, Tint = Color3.fromRGB(200, 206, 222)},
+    		bloom = {Intensity = 0.6, Size = 28, Threshold = 1.3},
+    		sun = {Intensity = 0.08, Spread = 0.7},
+    		atmos = {Density = 0.55, Offset = 0.2, Glare = 0.15, Haze = 3, Color = Color3.fromRGB(120, 135, 160), Decay = Color3.fromRGB(40, 48, 62)},
+    		dof = {FocusDistance = 50, InFocusRadius = 30, NearIntensity = 0.05, FarIntensity = 0.55},
+    		light = {Brightness = 1.4, Exposure = -0.05, EnvDiffuse = 0.9, EnvSpecular = 1, ShadowSoftness = 0.8, Ambient = Color3.fromRGB(38, 40, 50), OutdoorAmbient = Color3.fromRGB(70, 76, 90), ColorShiftTop = Color3.fromRGB(200, 210, 230), FogColor = Color3.fromRGB(100, 112, 135), FogStart = 0, FogEnd = 3500}
+    	},
     	['Dreamy'] = {
     		cc = {Brightness = 0.08, Contrast = -0.08, Saturation = 0.1, Tint = Color3.fromRGB(255, 244, 238)},
     		bloom = {Intensity = 1.2, Size = 40, Threshold = 0.9},
@@ -4693,7 +4701,7 @@ run(function()
     		light = {Brightness = 2, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(90, 75, 65), OutdoorAmbient = Color3.fromRGB(150, 120, 100), ColorShiftTop = Color3.fromRGB(255, 225, 190), FogColor = Color3.fromRGB(255, 205, 165), FogStart = 0, FogEnd = 5000, ClockTime = 15.7}
     	}
     }
-    local presetList = {'Realistic', 'Ultra Realistic', 'Cinematic', 'Vibrant', 'Dreamy', 'Noir', 'Golden Hour'}
+    local presetList = {'Realistic', 'Ultra Realistic', 'Cinematic', 'Vibrant', 'Moody', 'Dreamy', 'Noir', 'Golden Hour'}
 
     local function setProp(obj, prop, value)
     	pcall(function()
@@ -4942,7 +4950,7 @@ run(function()
     	Tooltip = 'Full graphics overhaul - realistic lighting, post processing and atmosphere with adaptive FPS to keep frame rates steady.'
     })
     Preset = Shaders:CreateDropdown({
-    	Name = 'Preset',
+    	Name = 'Presets',
     	List = presetList,
     	Function = function()
     		if Shaders.Enabled then
