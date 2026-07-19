@@ -1862,7 +1862,7 @@ run(function()
     	local CustomProperties
     	local WallCheck
     	local PlatformStanding
-    	local AntiLagback, SpeedLimit, Recovery, VoidRescue
+    	local AntiLagback, SpeedLimit, Recovery, VoidRescue, VoidDrop, AutoDisable
     	local Platform, YLevel, OldYLevel
     	local groundAnchor, lastSafeCFrame, lastSafeTick, lastRootPos, pauseUntil = nil, nil, 0, nil, 0
     	local safeRay = RaycastParams.new()
@@ -1870,7 +1870,7 @@ run(function()
     	local function captureGround(root)
     		safeRay.FilterDescendantsInstances = {lplr.Character, gameCamera, Platform}
     		safeRay.CollisionGroup = root.CollisionGroup
-    		local hit = workspace:Raycast(root.Position, Vector3.new(0, -80, 0), safeRay)
+    		local hit = workspace:Raycast(root.Position, Vector3.new(0, -500, 0), safeRay)
     		if hit then
     			local hip = entitylib.character and entitylib.character.HipHeight or 2
     			groundAnchor = CFrame.new(hit.Position + Vector3.new(0, hip + 2, 0))
@@ -1983,7 +1983,9 @@ run(function()
     						if AntiLagback.Enabled then
     							local now = tick()
     							if now < pauseUntil then
+    								if groundAnchor then root.CFrame = groundAnchor end
     								root.AssemblyLinearVelocity = Vector3.zero
+    								YLevel, OldYLevel = nil, nil
     								lastRootPos = root.Position
     								return
     							end
@@ -2002,16 +2004,23 @@ run(function()
     									return
     								end
     							end
-    							if VoidRescue.Enabled and root.Position.Y < workspace.FallenPartsDestroyHeight + 25 then
-    								if rescueTo then root.CFrame = rescueTo end
-    								root.AssemblyLinearVelocity = Vector3.zero
-    								YLevel, OldYLevel = nil, nil
-    								pauseUntil = now + Recovery.Value
-    								lastRootPos = root.Position
-    								task.defer(function()
-    									if Fly.Enabled then Fly:Toggle() end
-    								end)
-    								return
+    							if VoidRescue.Enabled then
+    								local voidThreshold = groundAnchor and (groundAnchor.Y - VoidDrop.Value) or (workspace.FallenPartsDestroyHeight + 25)
+    								if root.Position.Y < voidThreshold then
+    									if rescueTo then root.CFrame = rescueTo end
+    									root.AssemblyLinearVelocity = Vector3.zero
+    									YLevel, OldYLevel = nil, nil
+    									if AutoDisable.Enabled then
+    										pauseUntil = now + Recovery.Value
+    										task.defer(function()
+    											if Fly.Enabled then Fly:Toggle() end
+    										end)
+    									else
+    										pauseUntil = now + math.max(Recovery.Value, 1.5)
+    									end
+    									lastRootPos = root.Position
+    									return
+    								end
     							end
     							if now - lastSafeTick >= 0.25 then
     								if captureGround(root) then
@@ -2295,6 +2304,8 @@ run(function()
     				if SpeedLimit and SpeedLimit.Object then SpeedLimit.Object.Visible = callback end
     				if Recovery and Recovery.Object then Recovery.Object.Visible = callback end
     				if VoidRescue and VoidRescue.Object then VoidRescue.Object.Visible = callback end
+    				if VoidDrop and VoidDrop.Object then VoidDrop.Object.Visible = callback end
+    				if AutoDisable and AutoDisable.Object then AutoDisable.Object.Visible = callback end
     			end)
     			if Fly.Enabled then
     				groundAnchor, lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, nil, 0
@@ -2305,7 +2316,7 @@ run(function()
     				end
     			end
     		end,
-    		Tooltip = 'Caps per-tick movement, rubber-bands snapbacks to the last on-ground pose, and disables Fly on void so the anticheat has nothing to catch'
+    		Tooltip = 'Caps per-tick movement, rubber-bands snapbacks to the last on-ground pose, and rescues you out of the void before the killzone fires'
     	})
     	SpeedLimit = Fly:CreateSlider({
     		Name = 'Speed Limit',
@@ -2334,7 +2345,24 @@ run(function()
     		Name = 'Void Rescue',
     		Default = true,
     		Darker = true,
-    		Tooltip = 'Snap back to the last known safe position if you fall below the map'
+    		Tooltip = 'Snap back to the last known ground pose when you drop below it'
+    	})
+    	VoidDrop = Fly:CreateSlider({
+    		Name = 'Void Drop',
+    		Min = 10,
+    		Max = 200,
+    		Default = 30,
+    		Darker = true,
+    		Suffix = function(val)
+    			return val == 1 and 'stud' or 'studs'
+    		end,
+    		Tooltip = 'How far below the last ground pose you have to drop before Void Rescue fires — smaller = earlier catch, larger = tolerates high-altitude flight'
+    	})
+    	AutoDisable = Fly:CreateToggle({
+    		Name = 'Auto Disable On Void',
+    		Default = true,
+    		Darker = true,
+    		Tooltip = 'On: Fly turns itself off after a void catch (safer, re-arm manually). Off: Fly stays on and just pauses ~1.5s so you can steer back over ground.'
     	})
     end)
 end)
