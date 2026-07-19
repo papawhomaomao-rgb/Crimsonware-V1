@@ -1864,7 +1864,20 @@ run(function()
     	local PlatformStanding
     	local AntiLagback, SpeedLimit, Recovery, VoidRescue
     	local Platform, YLevel, OldYLevel
-    	local lastSafeCFrame, lastSafeTick, lastRootPos, pauseUntil = nil, 0, nil, 0
+    	local groundAnchor, lastSafeCFrame, lastSafeTick, lastRootPos, pauseUntil = nil, nil, 0, nil, 0
+    	local safeRay = RaycastParams.new()
+    	safeRay.RespectCanCollide = true
+    	local function captureGround(root)
+    		safeRay.FilterDescendantsInstances = {lplr.Character, gameCamera, Platform}
+    		safeRay.CollisionGroup = root.CollisionGroup
+    		local hit = workspace:Raycast(root.Position, Vector3.new(0, -80, 0), safeRay)
+    		if hit then
+    			local hip = entitylib.character and entitylib.character.HipHeight or 2
+    			groundAnchor = CFrame.new(hit.Position + Vector3.new(0, hip + 2, 0))
+    			return true
+    		end
+    		return false
+    	end
     	local w, s, a, d, up, down = 0, 0, 0, 0, 0, 0
     	local rayCheck = RaycastParams.new()
     	rayCheck.RespectCanCollide = true
@@ -1945,6 +1958,15 @@ run(function()
     			frictionTable.Fly = callback and CustomProperties.Enabled or nil
     			updateVelocity()
     			if callback then
+    				groundAnchor = nil
+    				lastSafeCFrame = nil
+    				lastSafeTick = 0
+    				lastRootPos = nil
+    				pauseUntil = 0
+    				if entitylib.isAlive then
+    					captureGround(entitylib.character.RootPart)
+    					if groundAnchor then lastSafeCFrame = groundAnchor end
+    				end
     				Fly:Clean(runService.PreSimulation:Connect(function(dt)
     					if entitylib.isAlive then
     						if PlatformStanding.Enabled then
@@ -1965,13 +1987,14 @@ run(function()
     								lastRootPos = root.Position
     								return
     							end
+    							local rescueTo = groundAnchor or lastSafeCFrame
     							if lastRootPos then
     								local horDelta = ((root.Position - lastRootPos) * Vector3.new(1, 0, 1)).Magnitude
     								local yDrop = lastRootPos.Y - root.Position.Y
     								local horLimit = math.max(SpeedLimit.Value * dt * 3, 20)
     								local yLimit = math.max(SpeedLimit.Value * dt + 5, 15)
     								if horDelta > horLimit or yDrop > yLimit then
-    									if lastSafeCFrame then root.CFrame = lastSafeCFrame end
+    									if rescueTo then root.CFrame = rescueTo end
     									root.AssemblyLinearVelocity = Vector3.zero
     									YLevel, OldYLevel = nil, nil
     									pauseUntil = now + Recovery.Value
@@ -1980,15 +2003,22 @@ run(function()
     								end
     							end
     							if VoidRescue.Enabled and root.Position.Y < workspace.FallenPartsDestroyHeight + 25 then
-    								if lastSafeCFrame then root.CFrame = lastSafeCFrame end
+    								if rescueTo then root.CFrame = rescueTo end
     								root.AssemblyLinearVelocity = Vector3.zero
     								YLevel, OldYLevel = nil, nil
     								pauseUntil = now + Recovery.Value
     								lastRootPos = root.Position
+    								task.defer(function()
+    									if Fly.Enabled then Fly:Toggle() end
+    								end)
     								return
     							end
     							if now - lastSafeTick >= 0.25 then
-    								lastSafeCFrame = root.CFrame
+    								if captureGround(root) then
+    									lastSafeCFrame = groundAnchor
+    								elseif not lastSafeCFrame then
+    									lastSafeCFrame = root.CFrame
+    								end
     								lastSafeTick = now
     							end
     						end
@@ -2013,6 +2043,7 @@ run(function()
     					else
     						YLevel = nil
     						OldYLevel = nil
+    						groundAnchor = nil
     						lastSafeCFrame = nil
     						lastRootPos = nil
     						pauseUntil = 0
@@ -2052,7 +2083,7 @@ run(function()
     				end
     			else
     				YLevel, OldYLevel = nil, nil
-    				lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, 0
+    				groundAnchor, lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, nil, 0
     				lastSafeTick = 0
     				if entitylib.isAlive then
     					if PlatformStanding.Enabled then
@@ -2266,17 +2297,21 @@ run(function()
     				if VoidRescue and VoidRescue.Object then VoidRescue.Object.Visible = callback end
     			end)
     			if Fly.Enabled then
-    				lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, 0
+    				groundAnchor, lastSafeCFrame, lastRootPos, pauseUntil = nil, nil, nil, 0
     				lastSafeTick = 0
+    				if callback and entitylib.isAlive then
+    					captureGround(entitylib.character.RootPart)
+    					if groundAnchor then lastSafeCFrame = groundAnchor end
+    				end
     			end
     		end,
-    		Tooltip = 'Caps per-tick movement and rubber-bands out of snapbacks / the void so server anticheat has nothing to flag'
+    		Tooltip = 'Caps per-tick movement, rubber-bands snapbacks to the last on-ground pose, and disables Fly on void so the anticheat has nothing to catch'
     	})
     	SpeedLimit = Fly:CreateSlider({
     		Name = 'Speed Limit',
     		Min = 16,
     		Max = 200,
-    		Default = 60,
+    		Default = 30,
     		Darker = true,
     		Suffix = function(val)
     			return val == 1 and 'stud/s' or 'studs/s'
