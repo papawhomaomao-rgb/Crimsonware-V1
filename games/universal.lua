@@ -4637,69 +4637,69 @@ run(function()
 
     local presets = {
     	['Realistic'] = {
-    		cc = {Brightness = 0, Contrast = 0.1, Saturation = 0.12, Tint = Color3.fromRGB(247, 246, 252)},
-    		bloom = {Intensity = 0.55, Size = 24, Threshold = 1.35},
-    		sun = {Intensity = 0.12, Spread = 0.85},
-    		atmos = {Density = 0.34, Offset = 0.2, Glare = 0.15, Haze = 1.4, Color = Color3.fromRGB(199, 220, 255), Decay = Color3.fromRGB(92, 100, 115)},
-    		dof = {FocusDistance = 55, InFocusRadius = 35, NearIntensity = 0, FarIntensity = 0.35},
-    		light = {Brightness = 2, Exposure = 0.15, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.45, Ambient = Color3.fromRGB(70, 70, 78), OutdoorAmbient = Color3.fromRGB(120, 125, 135), ColorShiftTop = Color3.fromRGB(255, 250, 240), FogColor = Color3.fromRGB(185, 205, 230), FogStart = 0, FogEnd = 5000}
+    		cc = {Brightness = 0, Contrast = 0.08, Saturation = 0.1, Tint = Color3.fromRGB(250, 250, 253)},
+    		bloom = {Intensity = 0.4, Size = 24, Threshold = 1.8},
+    		sun = {Intensity = 0.1, Spread = 0.9},
+    		atmos = {Density = 0.32, Offset = 0.2, Glare = 0.12, Haze = 1.2, Color = Color3.fromRGB(200, 218, 245), Decay = Color3.fromRGB(95, 105, 120)},
+    		dof = {FocusDistance = 55, InFocusRadius = 35, NearIntensity = 0, FarIntensity = 0.3},
+    		light = {Brightness = 1.5, Exposure = 0.05, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.4, Ambient = Color3.fromRGB(55, 57, 64), OutdoorAmbient = Color3.fromRGB(105, 112, 124), ColorShiftTop = Color3.fromRGB(255, 251, 244), FogColor = Color3.fromRGB(190, 208, 230), FogStart = 0, FogEnd = 5000},
     	},
     	['Ultra Realistic'] = {
-    		cc = {Brightness = 0.02, Contrast = 0.14, Saturation = 0.18, Tint = Color3.fromRGB(250, 249, 255)},
-    		bloom = {Intensity = 0.7, Size = 30, Threshold = 1.5},
-    		sun = {Intensity = 0.18, Spread = 1},
-    		atmos = {Density = 0.42, Offset = 0.28, Glare = 0.35, Haze = 1.9, Color = Color3.fromRGB(205, 224, 255), Decay = Color3.fromRGB(86, 96, 112)},
-    		dof = {FocusDistance = 70, InFocusRadius = 45, NearIntensity = 0, FarIntensity = 0.5},
-    		light = {Brightness = 2.2, Exposure = 0.25, EnvDiffuse = 1, EnvSpecular = 1.1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(60, 62, 72), OutdoorAmbient = Color3.fromRGB(110, 118, 132), ColorShiftTop = Color3.fromRGB(255, 248, 236), FogColor = Color3.fromRGB(180, 202, 232), FogStart = 0, FogEnd = 6000}
+    		cc = {Brightness = 0, Contrast = 0.09, Saturation = 0.14, Tint = Color3.fromRGB(252, 251, 255)},
+    		bloom = {Intensity = 0.5, Size = 28, Threshold = 1.9},
+    		sun = {Intensity = 0.14, Spread = 1},
+    		atmos = {Density = 0.38, Offset = 0.25, Glare = 0.25, Haze = 1.6, Color = Color3.fromRGB(204, 222, 252), Decay = Color3.fromRGB(80, 90, 106)},
+    		dof = {FocusDistance = 70, InFocusRadius = 45, NearIntensity = 0, FarIntensity = 0.4},
+    		light = {Brightness = 1.6, Exposure = 0.08, EnvDiffuse = 1, EnvSpecular = 1.05, ShadowSoftness = 0.5, Ambient = Color3.fromRGB(48, 50, 58), OutdoorAmbient = Color3.fromRGB(98, 106, 120), ColorShiftTop = Color3.fromRGB(255, 250, 240), FogColor = Color3.fromRGB(185, 205, 232), FogStart = 0, FogEnd = 6500},
     	},
     	['Cinematic'] = {
-    		cc = {Brightness = -0.02, Contrast = 0.22, Saturation = -0.05, Tint = Color3.fromRGB(255, 238, 220)},
-    		bloom = {Intensity = 0.8, Size = 34, Threshold = 1.2},
-    		sun = {Intensity = 0.22, Spread = 1},
-    		atmos = {Density = 0.4, Offset = 0.15, Glare = 0.4, Haze = 2.2, Color = Color3.fromRGB(150, 180, 230), Decay = Color3.fromRGB(60, 70, 95)},
-    		dof = {FocusDistance = 40, InFocusRadius = 25, NearIntensity = 0.1, FarIntensity = 0.7},
-    		light = {Brightness = 1.8, Exposure = 0.1, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.7, Ambient = Color3.fromRGB(48, 48, 60), OutdoorAmbient = Color3.fromRGB(100, 105, 120), ColorShiftTop = Color3.fromRGB(255, 236, 214), FogColor = Color3.fromRGB(140, 160, 200), FogStart = 0, FogEnd = 4000}
+    		cc = {Brightness = -0.02, Contrast = 0.16, Saturation = 0, Tint = Color3.fromRGB(255, 240, 224)},
+    		bloom = {Intensity = 0.55, Size = 32, Threshold = 1.5},
+    		sun = {Intensity = 0.16, Spread = 1},
+    		atmos = {Density = 0.36, Offset = 0.15, Glare = 0.3, Haze = 1.8, Color = Color3.fromRGB(150, 178, 225), Decay = Color3.fromRGB(62, 72, 96)},
+    		dof = {FocusDistance = 40, InFocusRadius = 25, NearIntensity = 0.1, FarIntensity = 0.6},
+    		light = {Brightness = 1.4, Exposure = 0, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(44, 46, 56), OutdoorAmbient = Color3.fromRGB(94, 100, 116), ColorShiftTop = Color3.fromRGB(255, 238, 218), FogColor = Color3.fromRGB(140, 162, 200), FogStart = 0, FogEnd = 4200},
     	},
     	['Vibrant'] = {
-    		cc = {Brightness = 0.05, Contrast = 0.16, Saturation = 0.55, Tint = Color3.fromRGB(255, 252, 248)},
-    		bloom = {Intensity = 0.9, Size = 26, Threshold = 1.1},
-    		sun = {Intensity = 0.2, Spread = 0.9},
-    		atmos = {Density = 0.28, Offset = 0.2, Glare = 0.25, Haze = 1, Color = Color3.fromRGB(210, 228, 255), Decay = Color3.fromRGB(110, 120, 140)},
+    		cc = {Brightness = 0.02, Contrast = 0.12, Saturation = 0.42, Tint = Color3.fromRGB(255, 253, 250)},
+    		bloom = {Intensity = 0.6, Size = 26, Threshold = 1.5},
+    		sun = {Intensity = 0.16, Spread = 0.9},
+    		atmos = {Density = 0.26, Offset = 0.2, Glare = 0.2, Haze = 0.9, Color = Color3.fromRGB(208, 226, 255), Decay = Color3.fromRGB(110, 120, 140)},
     		dof = {FocusDistance = 80, InFocusRadius = 60, NearIntensity = 0, FarIntensity = 0.2},
-    		light = {Brightness = 2.4, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.35, Ambient = Color3.fromRGB(85, 85, 90), OutdoorAmbient = Color3.fromRGB(140, 145, 155), ColorShiftTop = Color3.fromRGB(255, 252, 245), FogColor = Color3.fromRGB(200, 220, 245), FogStart = 0, FogEnd = 8000}
+    		light = {Brightness = 1.7, Exposure = 0.08, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.35, Ambient = Color3.fromRGB(66, 66, 72), OutdoorAmbient = Color3.fromRGB(118, 122, 134), ColorShiftTop = Color3.fromRGB(255, 253, 246), FogColor = Color3.fromRGB(200, 220, 245), FogStart = 0, FogEnd = 8000},
     	},
     	['Moody'] = {
-    		cc = {Brightness = -0.05, Contrast = 0.2, Saturation = -0.3, Tint = Color3.fromRGB(200, 206, 222)},
-    		bloom = {Intensity = 0.6, Size = 28, Threshold = 1.3},
+    		cc = {Brightness = -0.03, Contrast = 0.14, Saturation = -0.25, Tint = Color3.fromRGB(205, 212, 226)},
+    		bloom = {Intensity = 0.45, Size = 28, Threshold = 1.6},
     		sun = {Intensity = 0.08, Spread = 0.7},
-    		atmos = {Density = 0.55, Offset = 0.2, Glare = 0.15, Haze = 3, Color = Color3.fromRGB(120, 135, 160), Decay = Color3.fromRGB(40, 48, 62)},
-    		dof = {FocusDistance = 50, InFocusRadius = 30, NearIntensity = 0.05, FarIntensity = 0.55},
-    		light = {Brightness = 1.4, Exposure = -0.05, EnvDiffuse = 0.9, EnvSpecular = 1, ShadowSoftness = 0.8, Ambient = Color3.fromRGB(38, 40, 50), OutdoorAmbient = Color3.fromRGB(70, 76, 90), ColorShiftTop = Color3.fromRGB(200, 210, 230), FogColor = Color3.fromRGB(100, 112, 135), FogStart = 0, FogEnd = 3500}
+    		atmos = {Density = 0.5, Offset = 0.2, Glare = 0.12, Haze = 2.6, Color = Color3.fromRGB(122, 138, 162), Decay = Color3.fromRGB(44, 52, 66)},
+    		dof = {FocusDistance = 50, InFocusRadius = 30, NearIntensity = 0.05, FarIntensity = 0.5},
+    		light = {Brightness = 1.2, Exposure = -0.08, EnvDiffuse = 0.9, EnvSpecular = 1, ShadowSoftness = 0.75, Ambient = Color3.fromRGB(40, 42, 52), OutdoorAmbient = Color3.fromRGB(74, 80, 94), ColorShiftTop = Color3.fromRGB(205, 214, 232), FogColor = Color3.fromRGB(104, 116, 138), FogStart = 0, FogEnd = 3800},
     	},
     	['Dreamy'] = {
-    		cc = {Brightness = 0.08, Contrast = -0.08, Saturation = 0.1, Tint = Color3.fromRGB(255, 244, 238)},
-    		bloom = {Intensity = 1.2, Size = 40, Threshold = 0.9},
-    		sun = {Intensity = 0.28, Spread = 1},
-    		atmos = {Density = 0.5, Offset = 0.35, Glare = 0.5, Haze = 2.8, Color = Color3.fromRGB(255, 220, 225), Decay = Color3.fromRGB(150, 150, 170)},
+    		cc = {Brightness = 0.04, Contrast = -0.05, Saturation = 0.08, Tint = Color3.fromRGB(255, 246, 240)},
+    		bloom = {Intensity = 0.9, Size = 40, Threshold = 1.1},
+    		sun = {Intensity = 0.22, Spread = 1},
+    		atmos = {Density = 0.45, Offset = 0.32, Glare = 0.4, Haze = 2.4, Color = Color3.fromRGB(255, 224, 228), Decay = Color3.fromRGB(150, 150, 168)},
     		dof = {FocusDistance = 60, InFocusRadius = 30, NearIntensity = 0.05, FarIntensity = 0.5},
-    		light = {Brightness = 2.1, Exposure = 0.25, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.9, Ambient = Color3.fromRGB(95, 88, 95), OutdoorAmbient = Color3.fromRGB(150, 140, 150), ColorShiftTop = Color3.fromRGB(255, 240, 235), FogColor = Color3.fromRGB(235, 215, 225), FogStart = 0, FogEnd = 5000}
+    		light = {Brightness = 1.6, Exposure = 0.12, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.85, Ambient = Color3.fromRGB(78, 74, 80), OutdoorAmbient = Color3.fromRGB(130, 124, 132), ColorShiftTop = Color3.fromRGB(255, 244, 238), FogColor = Color3.fromRGB(235, 218, 226), FogStart = 0, FogEnd = 5000},
     	},
     	['Noir'] = {
-    		cc = {Brightness = -0.03, Contrast = 0.3, Saturation = -0.85, Tint = Color3.fromRGB(225, 232, 245)},
-    		bloom = {Intensity = 0.5, Size = 22, Threshold = 1.4},
+    		cc = {Brightness = -0.02, Contrast = 0.26, Saturation = -0.85, Tint = Color3.fromRGB(228, 234, 246)},
+    		bloom = {Intensity = 0.4, Size = 22, Threshold = 1.6},
     		sun = {Intensity = 0.1, Spread = 0.8},
-    		atmos = {Density = 0.45, Offset = 0.1, Glare = 0.2, Haze = 2, Color = Color3.fromRGB(170, 185, 210), Decay = Color3.fromRGB(55, 62, 78)},
+    		atmos = {Density = 0.42, Offset = 0.1, Glare = 0.15, Haze = 1.9, Color = Color3.fromRGB(172, 186, 210), Decay = Color3.fromRGB(56, 63, 79)},
     		dof = {FocusDistance = 45, InFocusRadius = 25, NearIntensity = 0.1, FarIntensity = 0.6},
-    		light = {Brightness = 1.6, Exposure = 0.05, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(55, 58, 66), OutdoorAmbient = Color3.fromRGB(95, 100, 112), ColorShiftTop = Color3.fromRGB(235, 240, 250), FogColor = Color3.fromRGB(150, 160, 180), FogStart = 0, FogEnd = 4000}
+    		light = {Brightness = 1.3, Exposure = 0, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(50, 53, 61), OutdoorAmbient = Color3.fromRGB(90, 96, 108), ColorShiftTop = Color3.fromRGB(238, 242, 250), FogColor = Color3.fromRGB(150, 160, 180), FogStart = 0, FogEnd = 4000},
     	},
     	['Golden Hour'] = {
-    		cc = {Brightness = 0.03, Contrast = 0.14, Saturation = 0.25, Tint = Color3.fromRGB(255, 232, 200)},
-    		bloom = {Intensity = 0.85, Size = 30, Threshold = 1.15},
-    		sun = {Intensity = 0.3, Spread = 1},
-    		atmos = {Density = 0.4, Offset = 0.25, Glare = 0.45, Haze = 2, Color = Color3.fromRGB(255, 200, 150), Decay = Color3.fromRGB(120, 90, 80)},
+    		cc = {Brightness = 0.02, Contrast = 0.1, Saturation = 0.2, Tint = Color3.fromRGB(255, 236, 206)},
+    		bloom = {Intensity = 0.6, Size = 30, Threshold = 1.4},
+    		sun = {Intensity = 0.24, Spread = 1},
+    		atmos = {Density = 0.36, Offset = 0.25, Glare = 0.35, Haze = 1.8, Color = Color3.fromRGB(255, 205, 155), Decay = Color3.fromRGB(120, 92, 80)},
     		dof = {FocusDistance = 65, InFocusRadius = 45, NearIntensity = 0, FarIntensity = 0.4},
-    		light = {Brightness = 2, Exposure = 0.2, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.6, Ambient = Color3.fromRGB(90, 75, 65), OutdoorAmbient = Color3.fromRGB(150, 120, 100), ColorShiftTop = Color3.fromRGB(255, 225, 190), FogColor = Color3.fromRGB(255, 205, 165), FogStart = 0, FogEnd = 5000, ClockTime = 15.7}
-    	}
+    		light = {Brightness = 1.5, Exposure = 0.1, EnvDiffuse = 1, EnvSpecular = 1, ShadowSoftness = 0.55, Ambient = Color3.fromRGB(82, 70, 60), OutdoorAmbient = Color3.fromRGB(140, 114, 96), ColorShiftTop = Color3.fromRGB(255, 228, 194), FogColor = Color3.fromRGB(255, 208, 168), FogStart = 0, FogEnd = 5000, ClockTime = 15.7},
+    	},
     }
     local presetList = {'Realistic', 'Ultra Realistic', 'Cinematic', 'Vibrant', 'Moody', 'Dreamy', 'Noir', 'Golden Hour'}
 
