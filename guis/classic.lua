@@ -1058,6 +1058,7 @@ components = {
 				dropdownchildren.Size = UDim2.new(1, 0, 0, (#optionsettings.List - 1) * 26)
 				dropdownchildren.Position = UDim2.fromOffset(0, 27)
 				dropdownchildren.BackgroundTransparency = 1
+				dropdownchildren.ZIndex = button.ZIndex
 				dropdownchildren.Parent = button
 				local ind = 0
 				for _, v in optionsettings.List do
@@ -1075,6 +1076,7 @@ components = {
 					dropdownoption.TextSize = 13
 					dropdownoption.TextTruncate = Enum.TextTruncate.AtEnd
 					dropdownoption.FontFace = uipallet.Font
+					dropdownoption.ZIndex = button.ZIndex
 					dropdownoption.Parent = dropdownchildren
 					dropdownoption.MouseEnter:Connect(function()
 						tween:Tween(dropdownoption, uipallet.Tween, {
