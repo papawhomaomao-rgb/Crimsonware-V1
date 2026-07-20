@@ -3133,7 +3133,7 @@ run(function()
     local rayCheck = RaycastParams.new()
     rayCheck.RespectCanCollide = true
     local up, down, old = 0, 0
-    local lastSafeXZ, rescuePause = nil, 0
+    local lastSafeXZ, rescuePause, lastAnchorCheck = nil, 0, 0
 
     Fly = vape.Categories.Blatant:CreateModule({
         Name = 'Fly',
@@ -3143,7 +3143,15 @@ run(function()
             if callback then
                 up, down, old = 0, 0, bedwars.BalloonController.deflateBalloon
                 bedwars.BalloonController.deflateBalloon = function() end
-                lastSafeXZ, rescuePause = nil, 0
+                lastSafeXZ, rescuePause, lastAnchorCheck = nil, 0, 0
+                if entitylib.isAlive then
+                    rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera, AntiFallPart}
+                    rayCheck.CollisionGroup = entitylib.character.RootPart.CollisionGroup
+                    local initRay = workspace:Raycast(entitylib.character.RootPart.Position, Vector3.new(0, -1000, 0), rayCheck)
+                    if initRay then
+                        lastSafeXZ = Vector3.new(entitylib.character.RootPart.Position.X, initRay.Position.Y + entitylib.character.HipHeight, entitylib.character.RootPart.Position.Z)
+                    end
+                end
                 local tpTick, tpToggle, oldy = tick(), true
     
                 if lplr.Character and (lplr.Character:GetAttribute('InflatedBalloons') or 0) == 0 and getItem('balloon') then
@@ -3163,7 +3171,22 @@ run(function()
                         local destination = (moveDirection * math.max(Value.Value - velo, 0) * dt)
                         rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera, AntiFallPart}
                         rayCheck.CollisionGroup = root.CollisionGroup
-    
+
+                        if VoidRescueFly.Enabled and tick() - lastAnchorCheck > 0.25 then
+                            lastAnchorCheck = tick()
+                            local groundRay = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rayCheck)
+                            if groundRay then
+                                lastSafeXZ = Vector3.new(root.Position.X, groundRay.Position.Y + entitylib.character.HipHeight, root.Position.Z)
+                            elseif lastSafeXZ and tick() >= rescuePause then
+                                local horDist = (Vector3.new(root.Position.X - lastSafeXZ.X, 0, root.Position.Z - lastSafeXZ.Z)).Magnitude
+                                if horDist > 5 then
+                                    root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
+                                    root.AssemblyLinearVelocity = Vector3.zero
+                                    rescuePause = tick() + 1.2
+                                end
+                            end
+                        end
+
                         if WallCheck.Enabled then
                             local ray = workspace:Raycast(root.Position, destination, rayCheck)
                             if ray then
