@@ -3164,6 +3164,12 @@ run(function()
                 end))
                 Fly:Clean(runService.PreSimulation:Connect(function(dt)
                     if entitylib.isAlive and not InfiniteFly.Enabled and isnetworkowner(entitylib.character.RootPart) then
+                        if tick() < rescuePause and lastSafeXZ then
+                            local heldRoot = entitylib.character.RootPart
+                            heldRoot.CFrame = CFrame.lookAlong(lastSafeXZ, heldRoot.CFrame.LookVector)
+                            heldRoot.AssemblyLinearVelocity = Vector3.new(0, 0.9, 0)
+                            return
+                        end
                         local flyAllowed = (lplr.Character:GetAttribute('InflatedBalloons') and lplr.Character:GetAttribute('InflatedBalloons') > 0) or store.matchState == 2
                         local mass = (0.9 + (flyAllowed and 6 or 0) * (tick() % 0.4 < 0.2 and -1 or 1)) + ((up + down) * VerticalValue.Value)
                         local root, moveDirection = entitylib.character.RootPart, entitylib.character.Humanoid.MoveDirection
@@ -3229,9 +3235,6 @@ run(function()
                             end
                         end
 
-                        if tick() < rescuePause then
-                            destination = Vector3.zero
-                        end
                         root.CFrame += destination
                         root.AssemblyLinearVelocity = (moveDirection * velo) + Vector3.new(0, mass, 0)
                     end
