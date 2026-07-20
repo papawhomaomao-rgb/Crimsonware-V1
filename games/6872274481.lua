@@ -3133,7 +3133,7 @@ run(function()
     local rayCheck = RaycastParams.new()
     rayCheck.RespectCanCollide = true
     local up, down, old = 0, 0
-    local lastSafeXZ, rescuePause, lastAnchorCheck = nil, 0, 0
+    local lastSafeXZ, lastAnchorCheck, voidReturnPos = nil, 0, nil
 
     Fly = vape.Categories.Blatant:CreateModule({
         Name = 'Fly',
@@ -3143,7 +3143,7 @@ run(function()
             if callback then
                 up, down, old = 0, 0, bedwars.BalloonController.deflateBalloon
                 bedwars.BalloonController.deflateBalloon = function() end
-                lastSafeXZ, rescuePause, lastAnchorCheck = nil, 0, 0
+                lastSafeXZ, lastAnchorCheck, voidReturnPos = nil, 0, nil
                 if entitylib.isAlive then
                     rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera, AntiFallPart}
                     rayCheck.CollisionGroup = entitylib.character.RootPart.CollisionGroup
@@ -3164,12 +3164,6 @@ run(function()
                 end))
                 Fly:Clean(runService.PreSimulation:Connect(function(dt)
                     if entitylib.isAlive and not InfiniteFly.Enabled and isnetworkowner(entitylib.character.RootPart) then
-                        if tick() < rescuePause and lastSafeXZ then
-                            local heldRoot = entitylib.character.RootPart
-                            heldRoot.CFrame = CFrame.lookAlong(lastSafeXZ, heldRoot.CFrame.LookVector)
-                            heldRoot.AssemblyLinearVelocity = Vector3.new(0, 0.9, 0)
-                            return
-                        end
                         local flyAllowed = (lplr.Character:GetAttribute('InflatedBalloons') and lplr.Character:GetAttribute('InflatedBalloons') > 0) or store.matchState == 2
                         local mass = (0.9 + (flyAllowed and 6 or 0) * (tick() % 0.4 < 0.2 and -1 or 1)) + ((up + down) * VerticalValue.Value)
                         local root, moveDirection = entitylib.character.RootPart, entitylib.character.Humanoid.MoveDirection
@@ -3183,13 +3177,6 @@ run(function()
                             local groundRay = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rayCheck)
                             if groundRay then
                                 lastSafeXZ = Vector3.new(root.Position.X, groundRay.Position.Y + entitylib.character.HipHeight, root.Position.Z)
-                            elseif lastSafeXZ and tick() >= rescuePause then
-                                local horDist = (Vector3.new(root.Position.X - lastSafeXZ.X, 0, root.Position.Z - lastSafeXZ.Z)).Magnitude
-                                if horDist > 5 then
-                                    root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
-                                    root.AssemblyLinearVelocity = Vector3.zero
-                                    rescuePause = tick() + 1.2
-                                end
                             end
                         end
 
@@ -3213,10 +3200,10 @@ run(function()
                                             tpTick = tick() + 0.07
                                             root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
                                         elseif (not ray) and TP.Enabled and VoidRescueFly.Enabled and lastSafeXZ then
+                                            voidReturnPos = root.Position
                                             tpToggle = false
-                                            oldy = lastSafeXZ.Y
+                                            oldy = root.Position.Y
                                             tpTick = tick() + 0.07
-                                            rescuePause = tick() + 1.2
                                             root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
                                         end
                                     end
@@ -3224,7 +3211,14 @@ run(function()
                             else
                                 if oldy then
                                     if tpTick < tick() then
-                                        local newpos = Vector3.new(root.Position.X, oldy, root.Position.Z)
+                                        local returnX, returnZ
+                                        if voidReturnPos then
+                                            returnX, returnZ = voidReturnPos.X, voidReturnPos.Z
+                                            voidReturnPos = nil
+                                        else
+                                            returnX, returnZ = root.Position.X, root.Position.Z
+                                        end
+                                        local newpos = Vector3.new(returnX, oldy, returnZ)
                                         root.CFrame = CFrame.lookAlong(newpos, root.CFrame.LookVector)
                                         tpToggle = true
                                         oldy = nil
