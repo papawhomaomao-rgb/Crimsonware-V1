@@ -3133,7 +3133,7 @@ run(function()
     local rayCheck = RaycastParams.new()
     rayCheck.RespectCanCollide = true
     local up, down, old = 0, 0
-    local lastSafeXZ, lastAnchorCheck, voidReturnPos = nil, 0, nil
+    local lastSafeXZ, lastAnchorCheck, voidGuardUntil = nil, 0, nil
 
     Fly = vape.Categories.Blatant:CreateModule({
         Name = 'Fly',
@@ -3143,7 +3143,7 @@ run(function()
             if callback then
                 up, down, old = 0, 0, bedwars.BalloonController.deflateBalloon
                 bedwars.BalloonController.deflateBalloon = function() end
-                lastSafeXZ, lastAnchorCheck, voidReturnPos = nil, 0, nil
+                lastSafeXZ, lastAnchorCheck, voidGuardUntil = nil, 0, nil
                 if entitylib.isAlive then
                     rayCheck.FilterDescendantsInstances = {lplr.Character, gameCamera, AntiFallPart}
                     rayCheck.CollisionGroup = entitylib.character.RootPart.CollisionGroup
@@ -3188,37 +3188,39 @@ run(function()
                         end
     
                         if not flyAllowed then
-                            if tpToggle then
+                            if voidGuardUntil then
+                                -- Best-effort void guard: we crossed an island edge with no ground
+                                -- to reset airtime on, so pin to the last real ground long enough
+                                -- for the server to re-register us as grounded, then release. This
+                                -- trades wide-gap crossing for never eating a void death.
+                                if tick() < voidGuardUntil and lastSafeXZ then
+                                    root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
+                                    root.AssemblyLinearVelocity = Vector3.zero
+                                    return
+                                else
+                                    voidGuardUntil = nil
+                                end
+                            elseif tpToggle then
                                 local airleft = (tick() - entitylib.character.AirTime)
-                                if airleft > 1.7 then
-                                    if not oldy then
-                                        local ray = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rayCheck)
-                                        if ray and TP.Enabled then
-                                            lastSafeXZ = Vector3.new(root.Position.X, ray.Position.Y + entitylib.character.HipHeight, root.Position.Z)
-                                            tpToggle = false
-                                            oldy = root.Position.Y
-                                            tpTick = tick() + 0.07
-                                            root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
-                                        elseif (not ray) and TP.Enabled and VoidRescueFly.Enabled and lastSafeXZ then
-                                            voidReturnPos = root.Position
-                                            tpToggle = false
-                                            oldy = root.Position.Y
-                                            tpTick = tick() + 0.07
-                                            root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
-                                        end
+                                if airleft > 1.7 and not oldy then
+                                    local ray = workspace:Raycast(root.Position, Vector3.new(0, -1000, 0), rayCheck)
+                                    if ray and TP.Enabled then
+                                        lastSafeXZ = Vector3.new(root.Position.X, ray.Position.Y + entitylib.character.HipHeight, root.Position.Z)
+                                        tpToggle = false
+                                        oldy = root.Position.Y
+                                        tpTick = tick() + 0.07
+                                        root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
+                                    elseif (not ray) and TP.Enabled and VoidRescueFly.Enabled and lastSafeXZ then
+                                        voidGuardUntil = tick() + 0.1
+                                        root.CFrame = CFrame.lookAlong(lastSafeXZ, root.CFrame.LookVector)
+                                        root.AssemblyLinearVelocity = Vector3.zero
+                                        return
                                     end
                                 end
                             else
                                 if oldy then
                                     if tpTick < tick() then
-                                        local returnX, returnZ
-                                        if voidReturnPos then
-                                            returnX, returnZ = voidReturnPos.X, voidReturnPos.Z
-                                            voidReturnPos = nil
-                                        else
-                                            returnX, returnZ = root.Position.X, root.Position.Z
-                                        end
-                                        local newpos = Vector3.new(returnX, oldy, returnZ)
+                                        local newpos = Vector3.new(root.Position.X, oldy, root.Position.Z)
                                         root.CFrame = CFrame.lookAlong(newpos, root.CFrame.LookVector)
                                         tpToggle = true
                                         oldy = nil
@@ -3304,7 +3306,7 @@ run(function()
     VoidRescueFly = Fly:CreateToggle({
         Name = 'Void Rescue',
         Default = true,
-        Tooltip = 'When TP Down cannot find ground beneath you (over the void), teleport back to the last spot where it did — stops Bedwars from voiding you the moment you cross an island edge.'
+        Tooltip = 'No-balloon safety net over the void. When you drift past an island edge with no ground to reset airtime on, this yanks you back to the last real ground just before the server would void you. Narrow gaps still cross freely; wide gaps pull you back instead of killing you.'
     })
 end)
 
